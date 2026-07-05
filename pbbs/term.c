@@ -154,9 +154,10 @@ outcf(ch)
 char ch ;
 {
     if(*outlp >= TERMCOMSIZE)
-        return ;
+        return 0 ;
     (*outlp)++ ;
     *outp++ = ch ;
+    return ch;
 }
 
 term_init(term)

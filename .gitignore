@@ -1,0 +1,13 @@
+*.o
+*.a
+*.profraw
+*.tmp
+instance/
+
+lbbs
+chatd
+addacct
+delacct
+bbslog
+bbfinger
+bbsmaild

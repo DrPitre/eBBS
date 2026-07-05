@@ -25,7 +25,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
    If not you'll have to figure out the right settings and maybe add some.
 */
 
-#define LINUX		1 	/* Linux 1.x or 2.x */
+#define LINUX		0 	/* Linux 1.x or 2.x */
 #define SUNOS           0	/* SunOS version 4.x */
 #define SOLARIS         0       /* SunOS version 5.x */
 #define AIX             0       /* IBM AIX 3.2.x */
@@ -36,8 +36,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define ULTRIX          0       /* Ultrix 4.3 (LINUX works too) */
 #define MACHTEN         0       /* MachTen */
 #define HPUX            0       /* HP-UX 9.05 */
-#define FREEBSD         0       /* FreeBSD */
+#define FREEBSD         1       /* FreeBSD (also used for macOS/Darwin) */
 #define IRIX            0       /* SGI IRIX 5.3 */
+#define DARWIN          1       /* macOS / Darwin */
 
 /* 
    LONG must be a 4-byte quantity, SHORT must be a 2-byte quantity 
@@ -119,7 +120,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    Are you missing the <malloc.h> header file?
 */
 
-#if MACHTEN || FREEBSD
+#if MACHTEN || FREEBSD || DARWIN
 # define LACKS_MALLOC_H 1
 #endif
 

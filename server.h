@@ -64,6 +64,8 @@ typedef struct _SERVERDATA {
 #define LOG_LEVEL_MAX     10
 #define LOG_LEVEL_DEFAULT 1
 
+void bbslog(int level, char *fmt, ...);
+
 /* 
    Maximum number of files per board. Be careful not to extend this beyond
    BBS_MAX_RECORD in record.c! The readbits files will break things if so.

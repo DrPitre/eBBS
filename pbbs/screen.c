@@ -25,7 +25,7 @@
 #include "osdeps.h"
 #include "io.h"
 #include "screen.h"
-#include <varargs.h>
+#include <stdarg.h>
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -574,16 +574,13 @@ colorend()
 
 int dec[] = {1000000000,100000000,10000000,1000000,100000,10000,1000,100,10,1} ;
  
-prints(va_alist)
-va_dcl
+prints(char *fmt, ...)
 {
 	va_list ap ;
-	register char *fmt ;
     char *bp ;
 	register int i, count, hd, indx ;
 
-	va_start(ap) ;
-	fmt = va_arg(ap, char *) ;
+	va_start(ap, fmt) ;
 	while(*fmt != '\0')
       {
           if(*fmt == '%')

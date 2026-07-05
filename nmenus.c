@@ -314,7 +314,7 @@ do_help()
     NMENUITEM *mip ;
     
     if(currMenuEnt < 0)
-      return ;
+      return 0;
     mp = menuEnt[currMenuEnt] ;
     move(3,0) ;
     clrtoeol() ;

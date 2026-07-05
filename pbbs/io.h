@@ -56,3 +56,5 @@ extern int t_lines;
 extern int t_columns;
 extern int scrint;
 extern int g_child_pid;
+
+int prints(char *fmt, ...);

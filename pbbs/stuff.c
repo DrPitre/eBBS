@@ -24,13 +24,13 @@
 #include <stdio.h>
 #include <sys/param.h>
 #include <signal.h>
+#include "osdeps.h"
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
 # include <malloc.h>
 #endif
 #include <fcntl.h>
-#include "osdeps.h"
 #include "io.h"
 
 #define MAXENVS (200)

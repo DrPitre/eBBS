@@ -172,7 +172,7 @@ char *myname;
   char *ptr, *id;
   int gotit = 0;
 
-  if ((fp = fopen(fname, "r")) == NULL) return;
+  if ((fp = fopen(fname, "r")) == NULL) return 0;
   while (fgets(header, sizeof header, fp) && header[0] != '\n') {
     if (!gotit && strncmp(header, "To: ", 4)) continue;
     if (gotit && strncmp(header, "    ", 4)) break;
@@ -185,5 +185,6 @@ char *myname;
     }
   }
   fclose(fp);
+  return 0;
 }
 
