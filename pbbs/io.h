@@ -58,3 +58,23 @@ extern int scrint;
 extern int g_child_pid;
 
 int prints(char *fmt, ...);
+int oflush(void);
+int output(char *, int);
+int ochar(int);
+int num_in_buf(void);
+int getdata(int, int, char *, char *, int, int, int);
+int igetch(void);
+int bell(void);
+int pressreturn(void);
+int generic_abort(void);
+
+int get_tty(void);
+int init_tty(void);
+int reset_tty(void);
+int restore_tty(void);
+int term_ok(char *);
+int term_init(char *);
+
+int bbssetenv(char *, char *);
+int add_io(int, int);
+

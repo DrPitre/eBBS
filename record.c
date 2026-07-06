@@ -36,10 +36,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #define BBS_MAX_RECORD 4096
 
-_match_first(rec, fld)
-char *rec;
-char *fld;
+int
+_match_first(char *rec, void *fldarg)
 {
+  char *fld = (char *)fldarg;
   register char c1, c2;
   while (*fld) {
     c1 = *fld++;
@@ -49,10 +49,10 @@ char *fld;
   return ((*rec == ' ' || *rec == ':') ? S_RECEXISTS : S_OK);
 }
 
-_match_full(rec, fld)
-char *rec;
-char *fld;
+int
+_match_full(char *rec, void *fldarg)
 {
+  char *fld = (char *)fldarg;
   register char c1, c2;
   while (*fld) {
     c1 = *fld++;
@@ -63,19 +63,15 @@ char *fld;
 }
 
 /*ARGSUSED*/
-_change_name(newrec, oldrec, newname)
-char *newrec;
-char *oldrec;
-char *newname;
+int
+_change_name(char *newrec, char *oldrec, char *newname)
 {
   sprintf(newrec, "%s\n", newname);
   return S_OK;
 }
 
 char *
-_append_quoted(rec, str)
-char *rec;
-char *str;
+_append_quoted (char *rec, char *str)
 {
   while (*str) {
     if (*str == ':' || *str == '\\') *rec++ = '\\';
@@ -87,10 +83,7 @@ char *str;
 }
 
 char *
-_extract_quoted(rec, str, len)
-char *rec;
-char *str;
-int len;
+_extract_quoted (char *rec, char *str, int len)
 {
   len--;    /* leave space for terminating null */
   while (*rec != ':' && *rec != '\n' && *rec != '\0') {
@@ -106,12 +99,8 @@ int len;
   return rec;
 }
 
-_record_add(fname, testf, targ, formatf, farg)
-char *fname;
-int (*testf)();
-void *targ;
-int (*formatf)();
-void *farg;
+int
+_record_add(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf)(char *, void *), void *farg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -151,11 +140,8 @@ void *farg;
   return S_OK;
 }      
 
-_do_record_delete(fname, testf, targ, single)
-char *fname;
-int (*testf)();
-void *targ;
-int single;
+int
+_do_record_delete(char *fname, int (*testf)(char *, void *), void *targ, int single)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -194,28 +180,20 @@ int single;
   return (delsz ? S_OK : S_NOSUCHREC);
 }      
 
-_record_delete(fname, testf, targ)
-char *fname;
-int (*testf)();
-void *targ;
+int
+_record_delete(char *fname, int (*testf)(char *, void *), void *targ)
 {
   return (_do_record_delete(fname, testf, targ, 1));
 }
 
-_record_delete_many(fname, testf, targ)
-char *fname;
-int (*testf)();
-void *targ;
+int
+_record_delete_many(char *fname, int (*testf)(char *, void *), void *targ)
 {
   return (_do_record_delete(fname, testf, targ, 0));
 }
 
-_record_find(fname, testf, targ, formatf, farg)
-char *fname;
-int (*testf)();
-void *targ;
-int (*formatf)();
-void *farg;
+int
+_record_find(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf)(char *, void *), void *farg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -240,11 +218,8 @@ void *farg;
   return S_NOSUCHREC;
 }      
 
-_record_enumerate(fname, start, enumf, earg)
-char *fname;
-int start;
-int (*enumf)();
-void *earg;
+int
+_record_enumerate(char *fname, int start, int (*enumf)(int, char *, void *), void *earg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -268,12 +243,8 @@ void *earg;
 
 /* This is one UGLY function, but it's as neat as I can make it! */
 
-_record_replace(fname, testf, targ, replf, rarg)
-char *fname;
-int (*testf)();
-void *targ;
-int (*replf)();
-void *rarg;
+int
+_record_replace(char *fname, int (*testf)(char *, void *), void *targ, int (*replf)(char *, char *, void *), void *rarg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];

@@ -22,6 +22,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef REMOTE_CLIENT
 extern char *editor;
@@ -29,7 +30,8 @@ extern char *pager;
 extern char *shell;
 #endif
 
-ShowDate()
+int 
+ShowDate (void)
 {
   time_t now;
   move(3,0);
@@ -45,15 +47,15 @@ ShowDate()
    why bother with all that forking and execing when reading posts.
 */
 
-More(filename, promptend)
-char *filename;
-int promptend; 
+int 
+More (char *filename, int promptend) 
 {
   return (more(filename, promptend));
 }
 
 #ifndef REMOTE_CLIENT
-SelectEditor()
+int 
+SelectEditor (void)
 {
   NAME editorname;
   NAMELIST editorlist = NULL;
@@ -77,8 +79,8 @@ SelectEditor()
 }
 #endif
 
-Edit(filename)
-char *filename;
+int 
+Edit (char *filename)
 {
   int rc;
 #ifndef REMOTE_CLIENT
@@ -139,7 +141,8 @@ char *filename;
 }
  
 #ifdef REMOTE_CLIENT
-ShellEscape()
+int 
+ShellEscape (void)
 {
   clear();
   do_exec(shell, NULL);
@@ -147,7 +150,8 @@ ShellEscape()
 }
 #endif
 
-Welcome()
+int 
+Welcome (void)
 {
   PATH welcfile;
   int rc;
@@ -163,7 +167,8 @@ Welcome()
   return FULLUPDATE;
 }
     
-EditWelcome()
+int 
+EditWelcome (void)
 {
   PATH welcfile;
   int rc;
@@ -192,7 +197,8 @@ EditWelcome()
   return FULLUPDATE;
 }
 
-BoardInfo()
+int 
+BoardInfo (void)
 {   
   PATH infofile;
   int rc;
@@ -208,7 +214,8 @@ BoardInfo()
   return FULLUPDATE;
 }
 
-GnuInfo()
+int 
+GnuInfo (void)
 {   
   PATH gnufile;
   int rc;
@@ -224,10 +231,8 @@ GnuInfo()
   return FULLUPDATE;
 }
 
-#define LINELEN 80
-
-AnnotateMessageBody(dest, src)
-char *dest, *src;
+int
+AnnotateMessageBody (char *dest, char *src)
 {
   char buf[LINELEN], overflow[LINELEN];
   FILE *ofp, *ifp;
@@ -275,10 +280,11 @@ char *dest, *src;
   }
   fclose(ifp);
   fclose(ofp);
+  return 0;
 }
 
-filecopy(dest, src)
-char *dest, *src;
+int 
+filecopy (char *dest, char *src)
 {
   int ifd, ofd, rc = 0, cc;
   char buf[1024];
@@ -289,7 +295,7 @@ char *dest, *src;
       close(ofd);
       return -2;
     }
-  while (cc = read(ifd, buf, sizeof(buf)))
+  while ((cc = read(ifd, buf, sizeof(buf))))
     if (write(ofd, buf, cc) != cc) {
       rc = -3;
       break;
@@ -300,8 +306,8 @@ char *dest, *src;
 }
 
 #ifdef REMOTE_CLIENT
-SaveFile(fname)
-char *fname;
+int 
+SaveFile (char *fname)
 {
   char savename[PATHLEN];
   clear();

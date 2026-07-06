@@ -20,6 +20,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "osdeps.h"
 
 #define BBSHOMEENV "BBSHOME"
@@ -29,8 +30,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
    to chdir to the bbs home directory.
 */
 
-home_bbs(dir)
-char *dir;
+int 
+home_bbs (char *dir)
 {
   char *bbshome;
   if (dir != NULL) bbshome = dir;

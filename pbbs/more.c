@@ -24,14 +24,15 @@
 #include <stdio.h>
 #include "osdeps.h"
 #include "io.h"
+#include "screen.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#include <string.h>
 
 int
-readln(fp,buf)
-FILE *fp ;
-char *buf ;
+readln(FILE *fp, char *buf)
 {
     int i, j, k ;
     int ch ;
@@ -74,9 +75,8 @@ char *buf ;
     }
 }
 
-int
-more(filename,promptend)
-char *filename ;
+int 
+more (char *filename, int promptend)
 {
     FILE *fp ;
     int ch ;

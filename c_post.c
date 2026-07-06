@@ -21,12 +21,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "client.h"
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-int
-OpenBoard(openflags, newonly, resp)
-int *openflags;
-int newonly;
-int *resp;
+int 
+OpenBoard (int *openflags, int newonly, int *resp)
 {
   int code;
   OPENINFO openinfo;
@@ -37,7 +35,8 @@ int *resp;
   return (newonly ? openinfo.newmsgs : openinfo.totalmsgs);
 }
 
-CloseBoard()
+int 
+CloseBoard (void)
 {
   int code;
   code = bbs_close_board();
@@ -52,10 +51,12 @@ CloseBoard()
    other == error code from bbs_post
 */
 
-DoPostSend(subject, textfile, doedit)
-char *subject;    /* subject string */
-char *textfile;   /* file to send: if NULL invoke editor */
-int doedit;       /* edit even if textfile != NULL */
+int 
+DoPostSend (
+    char *subject,    /* subject string */
+    char *textfile,   /* file to send: if NULL invoke editor */
+    int doedit       /* edit even if textfile != NULL */
+)
 {
   int rc = 0;
   struct stat stbuf;
@@ -76,8 +77,8 @@ int doedit;       /* edit even if textfile != NULL */
   return rc;
 }            
 
-GenericPost(docheck)
-int docheck;
+int 
+GenericPost (int docheck)
 {
   int rc;
   LONG retcode = FULLUPDATE;
@@ -128,15 +129,15 @@ int docheck;
   return retcode;
 }
 
-Post()
+int 
+Post (void)
 {
   return (GenericPost(1));
 }
 
 /*ARGSUSED*/
-PostMessage(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostMessage (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   if (!BITISSET(openflags, OPEN_POST)) {
     bell();
@@ -146,16 +147,14 @@ int currmsg, numrecs, openflags;
 }
 
 /*ARGSUSED*/
-ReadMenuSelect(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+ReadMenuSelect (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
-  return (SelectBoard());
+  return (SelectBoard(NULL));
 }
 
-GenericPostReply(hptr, msgsrc)
-HEADER *hptr;
-char *msgsrc;
+int 
+GenericPostReply (HEADER *hptr, char *msgsrc)
 {
   TITLE subject;
   char ans[4];
@@ -216,17 +215,15 @@ char *msgsrc;
 }    
 
 /*ARGSUSED*/
-PostReply(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-LONG currmsg, numrecs, openflags;
+int 
+PostReply (HEADER *hptr, LONG currmsg, LONG numrecs, LONG openflags)
 {
   return (GenericPostReply(hptr, NULL));
 }
 
 /*ARGSUSED*/
-PostDelete(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostDelete (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[4];
@@ -255,9 +252,8 @@ int currmsg, numrecs, openflags;
 }
 
 /*ARGSUSED*/
-PostDelRange(hptr, currmsg, numinbox, openflags)
-HEADER *hptr;
-int currmsg, numinbox, openflags;
+int 
+PostDelRange (HEADER *hptr, int currmsg, int numinbox, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[5];
@@ -314,9 +310,8 @@ int currmsg, numinbox, openflags;
 }
 
 /*ARGSUSED*/
-PostMark(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostMark (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   SHORT ismarked = BITISSET(hptr->flags, FILE_MARKED);
   if (bbs_mark_message(hptr->fileid, !ismarked) != S_OK) return DONOTHING;
@@ -326,9 +321,8 @@ int currmsg, numrecs, openflags;
 }            
 
 /*ARGSUSED*/
-PostMove(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostMove (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   NAME bname;
@@ -371,9 +365,8 @@ int currmsg, numrecs, openflags;
 }
 
 /*ARGSUSED*/
-PostEdit(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostEdit (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   struct stat stbuf;
   PATH msgfile;
@@ -399,9 +392,8 @@ int currmsg, numrecs, openflags;
 }            
 
 /*ARGSUSED*/
-PostDisplay(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+PostDisplay (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   char ans[9], promptstr[80];
   PATH msgfile;

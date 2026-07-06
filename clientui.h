@@ -19,6 +19,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "pbbs/io.h"
+#include "pbbs/screen.h"
 
 /*
    Header file for the user interface. This plus the remote libbbs will 
@@ -72,7 +73,7 @@ typedef struct _NMENUITEM {
     int   enabled ;
     char *default_action ;
     char *error_action ;
-    int (*action_func)() ;
+    int (*action_func)(char *) ;
     char *action_arg ;
     char *help ;
     struct _NMENUITEM *prev ;
@@ -93,7 +94,7 @@ typedef struct _NREADMENUITEM {
     int   key ;
     int   mainprivs ;
     int   boardprivs ;
-    int (*action_func)() ;
+    int (*action_func)(HEADER *, int, int, int) ;
     char *help ;
     struct _NREADMENUITEM *next ;
 } NREADMENUITEM ;

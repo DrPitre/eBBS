@@ -36,7 +36,7 @@ LIBS=
 # NeXT wants -pipe -s -O4 -arch m68040; FreeBSD wants -O2 -m486 -pipe
 # might want to try -DMENU_STANDOUT too if you're a dialup bbs
 # might want -DEXTRA_CHAT_STUFF or -DNO_IGNORE_CHATOPS, see docs
-CCFLAGS=-O -DCOLOR -std=gnu89 -Wno-implicit-int -Wno-implicit-function-declaration -Wno-error=return-mismatch -Wno-error
+CCFLAGS=-O -DCOLOR -std=gnu89
 
 # flags for the linker -- NeXT wants -s -O4; FreeBSD wants -s
 LDFLAGS=-O

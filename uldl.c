@@ -40,10 +40,10 @@ typedef struct _PROTOCOL {
 #define PROTO_FLAG_RECV_PIPE     0x001
 #define PROTO_FLAG_RECV_FILENAME 0x002
 
-protoent_to_proto(rec, proto)
-char *rec;
-PROTOCOL *proto;
+int
+protoent_to_proto (char *rec, void *protoarg)
 {
+  PROTOCOL *proto = (PROTOCOL *)protoarg;
   proto->flags = PROTO_FLAG_RECV_FILENAME;
   rec = _extract_quoted(rec, proto->name, sizeof(proto->name));
   rec = _extract_quoted(rec, proto->sendbin, sizeof proto->sendbin);
@@ -59,9 +59,8 @@ PROTOCOL *proto;
   return S_OK;
 }
 
-_lookup_protocol(pname, proto)
-char *pname;
-PROTOCOL *proto;
+int 
+_lookup_protocol (char *pname, PROTOCOL *proto)
 {
   int rc;
   memset(proto, 0, sizeof *proto);
@@ -70,11 +69,10 @@ PROTOCOL *proto;
 }
 
 /*ARGSUSED*/
-_fill_protonames(indx, rec, lc)
-int indx;
-char *rec;
-struct listcomplete *lc;
+int
+_fill_protonames (int indx, char *rec, void *lcarg)
 {
+  struct listcomplete *lc = (struct listcomplete *)lcarg;
   PROTOCOL proto;
   protoent_to_proto(rec, &proto);
   if (!strncasecmp(proto.name, lc->str, strlen(lc->str)))
@@ -83,9 +81,8 @@ struct listcomplete *lc;
   return S_OK;
 }
 
-local_bbs_protonames(list, complete)
-NAMELIST *list;
-char *complete;
+int 
+local_bbs_protonames (NAMELIST *list, char *complete)
 {
   struct listcomplete lc;
   create_namelist(list);
@@ -111,10 +108,10 @@ char *complete;
    the directory for uploads to go to. Downloading from it is not allowed.
 */
 
-ftpent_to_board(rec, board)
-char *rec;
-BOARD *board;
+int
+ftpent_to_board (char *rec, void *boardarg)
 {
+  BOARD *board = (BOARD *)boardarg;
   PATH bdir;  /* thrown away in this function */
   rec = _extract_quoted(rec, board->name, sizeof(board->name));
   rec = _extract_quoted(rec, bdir, sizeof bdir);
@@ -122,19 +119,18 @@ BOARD *board;
   return S_OK;
 }
 
-ftpent_to_dir(rec, dir)
-char *rec;
-char *dir;
+int
+ftpent_to_dir (char *rec, void *dirarg)
 {
+  char *dir = (char *)dirarg;
   NAME bname;  /* thrown away in this function */
   rec = _extract_quoted(rec, bname, sizeof(bname));
   rec = _extract_quoted(rec, dir, PATHLEN+1);
   return S_OK;
 }
 
-_lookup_ftpent(bname, board)
-char *bname;
-BOARD *board;
+int 
+_lookup_ftpent (char *bname, BOARD *board)
 {
   int rc;
   memset(board, 0, sizeof *board);
@@ -144,9 +140,8 @@ BOARD *board;
   return rc;
 }
 
-get_fileboard_directory(bname, dir)
-char *bname;
-char *dir;
+int 
+get_fileboard_directory (char *bname, char *dir)
 {
   int rc;
   dir[0] = '\0';
@@ -154,11 +149,10 @@ char *dir;
   return rc;
 }
 
-_enum_fileboards(indx, rec, en)
-int indx;
-char *rec;
-struct enumstruct *en;
+int
+_enum_fileboards(int indx, char *rec, void *enarg)
 {
+  struct enumstruct *en = (struct enumstruct *)enarg;
   BOARD board;
   memset(&board, '\0', sizeof board);
   ftpent_to_board(rec, &board);
@@ -168,24 +162,20 @@ struct enumstruct *en;
 }
 
 /*ARGSUSED*/
-local_bbs_enum_fileboards(chunk, startrec, enumfn, arg)
-SHORT chunk;
-SHORT startrec;
-int (*enumfn)();
-void *arg;
+int
+local_bbs_enum_fileboards(SHORT chunk, SHORT startrec, int (*enumfn)(int, BOARD *, void *), void *arg)
 {
   struct enumstruct en;
-  en.fn = enumfn;
+  en.fn = (int (*)(int, void *, void *))enumfn;
   en.arg = arg;
   _record_enumerate(ULDLFILE, startrec, _enum_fileboards, &en);
   return S_OK;
 }
 
-_fill_fileboardnames(indx, rec, lc)
-int indx;
-char *rec;
-struct listcomplete *lc;
+int
+_fill_fileboardnames (int indx, char *rec, void *lcarg)
 {
+  struct listcomplete *lc = (struct listcomplete *)lcarg;
   BOARD board;
   ftpent_to_board(rec, &board);
   if (strcmp(board.name, UPLOADBOARD)) {
@@ -195,9 +185,8 @@ struct listcomplete *lc;
   return S_OK;
 }
 
-local_bbs_fileboardnames(list, complete)
-NAMELIST *list;
-char *complete;
+int 
+local_bbs_fileboardnames (NAMELIST *list, char *complete)
 {
   struct listcomplete lc;
   create_namelist(list);
@@ -207,8 +196,8 @@ char *complete;
   return S_OK;
 }
 
-_is_valid_fname(fname)
-char *fname;
+int 
+_is_valid_fname (char *fname)
 {
   /* To make sure no one tries to pull hanky panky, like asking to download
      /etc/passwd...*/
@@ -218,10 +207,8 @@ char *fname;
   return 1;
 }
 
-local_bbs_upload(path, fname, protoname)
-char *path;
-char *fname;
-char *protoname;
+int 
+local_bbs_upload (char *path, char *fname, char *protoname)
 {
   int rc;
   char *outf = NULL;
@@ -268,10 +255,8 @@ char *protoname;
   return (rc == -1 ? S_SYSERR : S_OK);
 }
 
-do_download(dir, fname, protoname)
-char *dir;
-char *fname;
-char *protoname;
+int 
+do_download (char *dir, char *fname, char *protoname)
 {
   int rc;
   PROTOCOL proto;

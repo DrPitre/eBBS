@@ -25,6 +25,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #if USES_SYS_SELECT_H
 # include <sys/select.h>
@@ -40,12 +41,11 @@ int talkfd = -1;
 int cloak_save;
 USERDATA talk_theirdata, talk_mydata;
 
-local_bbs_talk(pid, fd, sockp)
-LONG pid;
-LONG fd;
-LONG *sockp;
+int 
+local_bbs_talk (LONG pid, LONG fd, LONG *sockp)
 {
-  int s, sinlen, nfds, rc;
+  int s, nfds, rc;
+  socklen_t sinlen;
   struct sockaddr_in sin;
   fd_set readfds;
   struct timeval tv;
@@ -177,7 +177,8 @@ LONG *sockp;
   return 0;
 }  
   
-local_bbs_exit_talk()
+int 
+local_bbs_exit_talk (void)
 {
   USERDATA udata;
   if (talkfd == -1) return S_OK;
@@ -198,11 +199,10 @@ local_bbs_exit_talk()
 }  
 
 /*ARGSUSED*/
-_find_whos_paging(indx, udata, urec)
-int indx;
-USERDATA *udata;
-USEREC *urec;
+int
+_find_whos_paging (int indx, USERDATA *udata, void *urecarg)
 {
+  USEREC *urec = (USEREC *)urecarg;
   if (udata->destpid == urec->pid && udata->port != 0) {
     memcpy(urec, &udata->u, sizeof(*urec));
     /* Kludge: pass port back in flags field. */
@@ -212,10 +212,12 @@ USEREC *urec;
   return S_OK;
 }
 
-local_bbs_get_talk_request(urec, paddr, pport)
-USEREC *urec;
-LONG *paddr;      /* may be NULL */
-SHORT *pport;     /* may be NULL */
+int 
+local_bbs_get_talk_request (
+    USEREC *urec,
+    LONG *paddr,      /* may be NULL */
+    SHORT *pport     /* may be NULL */
+)
 {
   memset(urec, 0, sizeof(*urec));
   urec->pid = getpid();
@@ -230,10 +232,8 @@ SHORT *pport;     /* may be NULL */
   return S_OK;
 }
 
-_get_answer_socket(addr, port, psock)
-LONG addr;
-SHORT port;
-LONG *psock;
+int 
+_get_answer_socket (LONG addr, SHORT port, LONG *psock)
 {
   int s;
   struct sockaddr_in sin;
@@ -256,11 +256,11 @@ LONG *psock;
   return S_OK;
 }  
 
-local_bbs_refuse_page(addr, port)
-LONG addr;
-SHORT port;
+int 
+local_bbs_refuse_page (LONG addr, SHORT port)
 {
-  int rc, sock;
+  int rc;
+  LONG sock;
   char shaddup = 'n';
   rc = _get_answer_socket(addr, port, &sock);
   if (rc != S_OK) return rc;
@@ -272,12 +272,11 @@ SHORT port;
   return S_OK;
 }
 
-local_bbs_accept_page(addr, port, psock)
-LONG addr;
-SHORT port;
-LONG *psock;
+int 
+local_bbs_accept_page (LONG addr, SHORT port, LONG *psock)
 {
-  int rc, sock;
+  int rc;
+  LONG sock;
   char talktome = 'y';
   SHORT mymode;
 
@@ -307,17 +306,17 @@ LONG *psock;
 
 #define OVERRIDE_FILE  "overrides"
 
-get_override_file(userid, buf)
-char *userid;
-char *buf;
+int 
+get_override_file (char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, OVERRIDE_FILE);
+  return S_OK;
 }
 
-is_on_override_list(userid)
-char *userid;
+int 
+is_on_override_list (char *userid)
 {
   PATH buf;
   get_override_file(userid, buf);
@@ -326,8 +325,8 @@ char *userid;
   else return 0;
 }
 
-local_bbs_set_overrides(list)
-NAMELIST list;
+int 
+local_bbs_set_overrides (NAMELIST list)
 {
   PATH buf;
   FILE *fp;
@@ -335,8 +334,8 @@ NAMELIST list;
   return (write_namelist(buf, list));
 }
 
-local_bbs_get_overrides(list)
-NAMELIST *list;
+int 
+local_bbs_get_overrides (NAMELIST *list)
 {
   PATH buf;
   get_override_file(my_userid(), buf);
@@ -345,8 +344,8 @@ NAMELIST *list;
 
 /* Returns 1 if current user can page user, 0 if not */
 
-has_page_permission(udata)
-USERDATA *udata;
+int 
+has_page_permission (USERDATA *udata)
 {
   int noovers, noothers;
 
@@ -373,10 +372,8 @@ USERDATA *udata;
 /* For fixing override files when users get deleted or their names changed */
 
 /*ARGSUSED*/
-fix_override_entry(indx, rec, ncs)
-int indx;
-char *rec;
-struct namechange *ncs;
+int 
+fix_override_entry (int indx, char *rec, struct namechange *ncs)
 {
   PATH overfile;
   NAME userid;

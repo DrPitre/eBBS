@@ -24,6 +24,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "client.h"
+#include <ctype.h>
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -34,9 +35,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 int BoardType;
 
-extern OpenMailbox(), CloseMailbox();
-extern OpenBoard(), CloseBoard();
-extern OpenFileBoard(), CloseFileBoard();
+extern int OpenMailbox(int *, int, int *), CloseMailbox(void);
+extern int OpenBoard(int *, int, int *), CloseBoard(void);
+extern int OpenFileBoard(int *, int, int *), CloseFileBoard(void);
 
 #define PUTCURS   move(4+locmem->crs_line-locmem->top_line,0);prints(">");
 #define RMVCURS   move(4+locmem->crs_line-locmem->top_line,0);prints(" ");
@@ -52,9 +53,7 @@ struct keeploc {
 } ;
 
 struct keeploc *
-getkeep(btype,s,def_topline,def_cursline)
-char *s ;
-LONG def_topline, def_cursline;
+getkeep (int btype, char *s, LONG def_topline, LONG def_cursline)
 {
   static struct keeploc *keeplist = NULL ;
   struct keeploc *p ;
@@ -74,11 +73,8 @@ LONG def_topline, def_cursline;
   return p ;
 }
 
-void
-fixkeep(locmem, maxline, def_lines)
-struct keeploc *locmem;
-int maxline;
-int def_lines;
+void 
+fixkeep (struct keeploc *locmem, int maxline, int def_lines)
 {
   if (maxline < locmem->top_line) {
     if ((locmem->top_line = maxline - def_lines) < 1)
@@ -87,8 +83,8 @@ int def_lines;
   if (maxline < locmem->crs_line) locmem->crs_line = maxline;
 }
 
-ReadMenuTitle(m)
-NREADMENU *m;
+int 
+ReadMenuTitle (NREADMENU *m)
 {
   clear();
   move(0,0);
@@ -104,9 +100,10 @@ NREADMENU *m;
     prints("%5s %1s %5s  %s\n", m->menu_field1, m->menu_field2, 
            m->menu_field3, m->menu_field4) ;
   else
-    prints("%5s %7s %-16s %s\n", m->menu_field1, m->menu_field2, 
+    prints("%5s %7s %-16s %s\n", m->menu_field1, m->menu_field2,
            m->menu_field3, m->menu_field4) ;
   clrtobot() ;
+  return 0;
 }
 
 struct get_recs_struct {
@@ -114,19 +111,18 @@ struct get_recs_struct {
   SHORT got;
 };
 
-GetRecsFunc(indx, hdr, info)
-int indx;
-HEADER *hdr;
-struct get_recs_struct *info;
+int
+GetRecsFunc (int indx, HEADER *hdr, void *infoarg)
 {
+  struct get_recs_struct *info = (struct get_recs_struct *)infoarg;
   if (info->got >= info->want) return ENUM_QUIT;
   memcpy(&headers[info->got], hdr, sizeof(HEADER));
   info->got++;
   return S_OK;
 }  
 
-MenuGetRecords(first_line, num_lines)
-int first_line, num_lines;
+int 
+MenuGetRecords (int first_line, int num_lines)
 {
   int result;
   struct get_recs_struct gr;
@@ -137,8 +133,8 @@ int first_line, num_lines;
   return (result == S_OK ? (int)gr.got : 0);
 }
 
-MenuDrawScreen(first_line, num_lines)
-int first_line, num_lines;
+int 
+MenuDrawScreen (int first_line, int num_lines)
 {
   int i, k;
   char c;
@@ -169,9 +165,11 @@ int first_line, num_lines;
     }
     prints("%s\n", buf) ;
   }
+  return 0;
 }
 
-NoHeaders()
+int 
+NoHeaders (void)
 {
   switch (BoardType) {
   case BOARD_MAIL:
@@ -183,17 +181,15 @@ NoHeaders()
   default:
     prints("No messages on this board\n");
   }
+  return 0;
 }
 
 #define KEY_NORMAL (0)
 #define KEY_ESCAPE (1)
 #define KEY_VTKEYS (2)
 
-ReadMenu(m, openfn, closefn, keepname)
-NREADMENU *m;
-int (*openfn)();
-int (*closefn)();
-char *keepname;
+int
+ReadMenu(NREADMENU *m, int (*openfn)(int *, int, int *), int (*closefn)(void), char *keepname)
 {
   char lbuf[11];
   NREADMENUITEM *mi;
@@ -417,7 +413,8 @@ defaultlabel:
   return FULLUPDATE;
 }
 
-MailRead()
+int 
+MailRead (void)
 {
   int rc;
   BoardType = BOARD_MAIL;
@@ -427,7 +424,8 @@ MailRead()
   return rc;
 }
 
-MainRead()
+int 
+MainRead (void)
 {
   int rc = PARTUPDATE;
   if (*currboard == '\0') {
@@ -443,7 +441,8 @@ MainRead()
   return rc;
 }
 
-FileDownload()
+int 
+FileDownload (void)
 {
   int rc = PARTUPDATE;
   if (*currfileboard == '\0') {

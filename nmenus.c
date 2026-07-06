@@ -20,6 +20,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "client.h"
 #include <ctype.h>
+#include <unistd.h>
+#include "y.tab.h"
+
+int yyparse __P((void));
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -32,23 +36,23 @@ char *_menudesc_file;
 
 /* New Menu Function */
 
-int GetMenuLetter(s)
-char *s;
+int 
+GetMenuLetter (char *s)
 {
     char c;
     for (c = *s; *s; s++) if (*s >= 'A' && *s <= 'Z') return *s;
     return c;
 }
 
-int GetMenuIndex(t)
-unsigned int t ;
+int 
+GetMenuIndex (unsigned int t)
 {
     t = (t | 0x20) - 'a' ;
     return t % MAXMENUSZ ;
 }
 
-char InterpretMenuAction(action) 
-char *action;
+char 
+InterpretMenuAction (char *action)
 {
   if(action[0] != '$')
     return GetMenuLetter(action) ;
@@ -65,8 +69,7 @@ int currMenuEnt = -1 ;
 #if 0
 /*ARGSUSED*/
 int 
-NDoMenu(menu_name)
-char *menu_name ;
+NDoMenu (char *menu_name)
 {
   int found, update = FULLUPDATE;
   int fieldsz = t_columns/3;
@@ -146,10 +149,8 @@ char *menu_name ;
 }
 #endif
 
-int
-GetMenuLine(msp, cmd)
-NMENU *msp;
-char cmd;
+int 
+GetMenuLine (NMENU *msp, char cmd)
 {
   int lineno = 4;
   char mcmd;
@@ -166,8 +167,7 @@ char cmd;
 
 /*ARGSUSED*/
 int 
-NDoMenu(menu_name)
-char *menu_name ;
+NDoMenu (char *menu_name)
 {
   int found, update = FULLUPDATE;
   int fieldsz = t_columns/3;
@@ -308,7 +308,8 @@ char *menu_name ;
   return FULLUPDATE;
 }
 
-do_help()
+int
+do_help (char *s)
 {
     NMENU *mp ;
     NMENUITEM *mip ;
@@ -328,8 +329,8 @@ do_help()
     return PARTUPDATE;
 }
 
-do_echo(s)
-char *s ;
+int 
+do_echo (char *s)
 {
     clear() ;
     prints("%s",s) ;
@@ -337,8 +338,8 @@ char *s ;
     return FULLUPDATE ;
 }
 
-exec_func(s)
-char *s ;
+int 
+exec_func (char *s)
 {
     int i ;
     char buf[4096] ;
@@ -367,8 +368,8 @@ char *s ;
     return FULLUPDATE ;
 }
  
-exec_func_w_pause(s)
-char *s ;
+int 
+exec_func_w_pause (char *s)
 {
     int i ;
     
@@ -399,10 +400,10 @@ char *s ;
     return FULLUPDATE ;
 }
 
-int do_pipe_more() ;
+int do_pipe_more(char *) ;
 
-int revised_pipe_more(s)
-char *s ;
+int 
+revised_pipe_more (char *s)
 {
     char buf[4096] ;
     char *p ;
@@ -414,13 +415,19 @@ char *s ;
         *p='\0' ;
         parse_environment(p+1) ;
     }
-      
+
     do_pipe_more(buf) ;
+    return FULLUPDATE ;
 }
 
 struct funcs {
     char *funcname ;
-    int (*funcptr)() ;
+    int (*funcptr)(char *) ;
+} ;
+
+struct rfuncs {
+    char *funcname ;
+    int (*funcptr)(HEADER *, int, int, int) ;
 } ;
 
 int NotImpl(), EndMenu(), XyzMenu(), AdminMenu(), MailMenu(), TalkMenu();
@@ -436,9 +443,9 @@ int SetUserData(), SetUserPerms(), ToggleCloak(), ToggleExempt();
 int Query(), QueryEdit();
 int MailSend(), GroupSend(), ReadNewMail(), MailRead();
 int MailDisplay(), MailDelete(), MailDelRange();
-int MailReply(), GroupReply(), Forward();
+int GroupReply(), Forward();
 int Visit(), BoardCounts(), Zap(), ReadNew(), SequentialRead();
-int Boards(), SelectBoard(), AddBoard(), DeleteBoard(), ChangeBoard();
+int Boards(), AddBoard(), DeleteBoard(), ChangeBoard();
 int SetBoardMgrs();
 int Post(),  MainRead(), ReadMenuSelect();
 int PostDisplay(), PostDelete(), PostMessage(), PostDelRange(), PostMark();
@@ -519,8 +526,7 @@ struct funcs funclist[] = {
     NULL,NULL
 } ;
     
-int (*findfunc(s))()
-char *s ;
+int (*findfunc(char *s))(char *)
 {
     int i ;
     
@@ -537,7 +543,8 @@ char *s ;
 
 char *funcstrings[MAX_CLNTCMDS];
 
-form_function_list()
+int 
+form_function_list (void)
 {
     FILE *fp;
     int i;
@@ -556,17 +563,20 @@ form_function_list()
       }
       fclose(fp);
     }
+    return 0;
 }
 
-free_function_list()
+int 
+free_function_list (void)
 {
     int i;
     for (i=0; i<MAX_CLNTCMDS; i++)
       if (funcstrings[i] != NULL) free(funcstrings[i]);
+    return 0;
 }
 
-convert_cmd_to_int(s) 
-char *s;
+int 
+convert_cmd_to_int (char *s)
 {
     int i ;
     
@@ -581,8 +591,8 @@ char *s;
 
 #else /* REMOTE_CLIENT */
 
-convert_cmd_to_int(s) 
-char *s;
+int 
+convert_cmd_to_int (char *s)
 {
     /* In the remote client, we're assuming numbers will be here */
     return 0;
@@ -592,7 +602,8 @@ char *s;
 
 int line_num ;
 
-ParseMenu()
+int 
+ParseMenu (void)
 {
     FILE *fp ;
     extern FILE *yyin ;
@@ -618,12 +629,12 @@ ParseMenu()
 
 int MainReadHelp(), MailReadHelp(), FileReadHelp();
 int MailDisplay(), MailDelete(), MailDelRange(), SequentialReadMail();
-int MailReply(), GroupReply(), Forward(), SequentialRead();
+int GroupReply(), Forward(), SequentialRead();
 int PostDisplay(), PostDelete(), PostMessage(), PostDelRange(), PostMark();
 int FileView(), FileReadMenuProto(), ReadMenuSelect(), PostEdit(), PostMove();
 int FileReceive(), FileReadMenuSelect(), FileForward(), FileChdir();
 
-struct funcs rfunclist[] = {
+struct rfuncs rfunclist[] = {
     "MainReadHelp",MainReadHelp,
     "MailReadHelp",MailReadHelp,
     "FileReadHelp",FileReadHelp,
@@ -654,19 +665,18 @@ struct funcs rfunclist[] = {
     NULL, NULL
 };
 
-int (*findrfunc(s))()
-char *s ;
+int (*findrfunc(char *s))(HEADER *, int, int, int)
 {
     int i ;
-    
+
     for(i=0;rfunclist[i].funcname;i++)
       if(!strcmp(rfunclist[i].funcname,s))
         return rfunclist[i].funcptr ;
     return NULL ;
 }
 
-convert_key_to_int(s)
-char *s;
+int 
+convert_key_to_int (char *s)
 {
     s++;
     if (*s == '^') {
@@ -676,24 +686,28 @@ char *s;
     return ((int)*s);
 }
 
-convert_openflag_to_int(s)
-char *s;
+int 
+convert_openflag_to_int (char *s)
 {
     if (*s == 'P' || *s == 'p') return OPEN_POST;
     else if (*s == 'M' || *s == 'm') return OPEN_MANAGE;
     else return 0;
 }
     
-yywrap()
+int 
+yywrap (void)
 {
     return 1 ;
 }
 
-yyerror()
+/*ARGSUSED*/
+int
+yyerror (char *s)
 {
     char buf[512] ;
     sprintf(buf,"syntax error in '%s' %d.\n",_menudesc_file,line_num) ;
     do_echo(buf) ;
+    return 0 ;
 }
 
 /* Error list: hardcoded for now. TODO: put in menu.desc */

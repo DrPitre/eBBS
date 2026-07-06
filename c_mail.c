@@ -21,11 +21,11 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "client.h"
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#include <unistd.h>
 
-OpenMailbox(openflags, newonly, resp)
-int *openflags;
-int newonly;
-int *resp;
+int
+OpenMailbox (int *openflags, int newonly, int *resp)
 {
   int code;
   OPENINFO openinfo;
@@ -36,7 +36,8 @@ int *resp;
   return (newonly ? (int)openinfo.newmsgs : (int)openinfo.totalmsgs);
 }
 
-CloseMailbox()
+int 
+CloseMailbox (void)
 {
   int code;
   code = bbs_close_board();
@@ -50,12 +51,14 @@ CloseMailbox()
   Otherwise return 0.
 */
 
-DoMailSend(recips, subject, textfile, doedit, retcode)
-NAMELIST recips;  /* list of intended recipients */
-char *subject;    /* subject string */
-char *textfile;   /* file to send: if NULL invoke editor */
-int doedit;       /* edit even if textfile != NULL */
-LONG *retcode;    /* bit mask of failed destinations */
+int 
+DoMailSend (
+    NAMELIST recips,  /* list of intended recipients */
+    char *subject,    /* subject string */
+    char *textfile,   /* file to send: if NULL invoke editor */
+    int doedit,       /* edit even if textfile != NULL */
+    LONG *retcode    /* bit mask of failed destinations */
+)
 {
   int rc = 0;
   struct stat stbuf;
@@ -76,11 +79,10 @@ LONG *retcode;    /* bit mask of failed destinations */
   return rc;
 }            
 
-show_names(indx, userid, mask)
-int indx;
-char *userid;
-LONG *mask;
+int
+show_names (int indx, char *userid, void *maskarg)
 {
+  LONG *mask = (LONG *)maskarg;
   int x, y;
   if ((*mask) & (LONG)(1<<indx)) {
     getyx(&y, &x);
@@ -91,8 +93,8 @@ LONG *mask;
   return S_OK;
 }
 
-GenericMailSend(group)
-int group;
+int 
+GenericMailSend (int group)
 {
   int rc;
   ADDR nbuf;
@@ -172,20 +174,21 @@ int group;
   return FULLUPDATE;
 }
 
-GroupSend()
+int 
+GroupSend (void)
 {
   return (GenericMailSend(1));
 }
 
-MailSend()
+int 
+MailSend (void)
 {
   return (GenericMailSend(0));
 }
 
 /*ARGSUSED*/
-MailDelete(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+MailDelete (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[4];
@@ -211,9 +214,8 @@ int currmsg, numrecs, openflags;
 }
 
 /*ARGSUSED*/
-MailDelRange(hptr, currmsg, numinbox, openflags)
-HEADER *hptr;
-int currmsg, numinbox, openflags;
+int 
+MailDelRange (HEADER *hptr, int currmsg, int numinbox, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[5];
@@ -266,9 +268,8 @@ int currmsg, numinbox, openflags;
 }
 
 /*ARGSUSED*/
-Forward(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+Forward (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   ACCOUNT acct;
@@ -296,10 +297,8 @@ int currmsg, numrecs, openflags;
   return rc;
 }
 
-GenericMailReply(hptr, group, msgsrc)
-HEADER *hptr;
-int group;
-char *msgsrc;
+int 
+GenericMailReply (HEADER *hptr, int group, char *msgsrc)
 {
   NAMELIST recips = NULL;
   TITLE subject;
@@ -361,25 +360,22 @@ char *msgsrc;
 }
 
 /*ARGSUSED*/
-MailReply(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+MailReply (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   return (GenericMailReply(hptr, 0, NULL));
 }    
 
 /*ARGSUSED*/
-GroupReply(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+GroupReply (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   return (GenericMailReply(hptr, 1, NULL));
 }    
 
 /*ARGSUSED*/
-MailDisplay(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+MailDisplay (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   char ans[9], promptstr[80];
   PATH msgfile;

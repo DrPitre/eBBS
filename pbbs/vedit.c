@@ -24,8 +24,15 @@
 #include <stdio.h>
 #include "osdeps.h"
 #include <sys/stat.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
 #include "io.h"
+#include "screen.h"
 #include "edit.h"
+
+static int vedit_help(void);
 
 struct textline *firstline = NULL ;
 struct textline *lastline = NULL ;
@@ -37,15 +44,14 @@ struct textline *top_of_win = NULL ;
 int curr_window_line ;
 int redraw_everything ;
 
-void
-indigestion(i)
+void 
+indigestion (int i)
 {
   fprintf(stderr,"SERIOUS INTERNAL INDIGESTION CLASS %d\n",i) ;
 }
 
 struct textline *
-back_line(pos,num)
-     struct textline *pos ;
+back_line (struct textline *pos, int num)
 {
   while(num-- > 0)
     if(pos && pos->prev)
@@ -54,8 +60,7 @@ back_line(pos,num)
 }
 
 struct textline *
-forward_line(pos,num)
-     struct textline *pos ;
+forward_line (struct textline *pos, int num)
 {
   while(num-- > 0)
     if(pos && pos->next)
@@ -63,8 +68,8 @@ forward_line(pos,num)
   return pos ;
 }
 
-int
-getlineno()
+int 
+getlineno (void)
 {
   int cnt = 0 ;
   struct textline *p = currline ;
@@ -78,8 +83,7 @@ getlineno()
   return cnt ;
 }
 char *
-killsp(s)
-     char *s ;
+killsp (char *s)
 {
   while(*s == ' ')
     s++ ;
@@ -87,11 +91,10 @@ killsp(s)
 }
 
 struct textline *
-alloc_line()
+alloc_line (void)
 {
-  extern void *malloc() ;
   register struct textline *p ;
-  
+
   p = (struct textline *) malloc(sizeof(*p)) ;
   if(p == NULL) {
     indigestion(13) ;
@@ -108,9 +111,8 @@ alloc_line()
    Appends p after line in list.  keeps up with last line as well.
    */
 
-void
-append(p,line)
-     register struct textline *p, *line ;
+void 
+append (register struct textline *p, register struct textline *line)
 {
   p->next = line->next ;
   if(line->next)
@@ -127,9 +129,8 @@ append(p,line)
    */
 
 
-void
-delete_line(line)
-     register struct textline *line ;
+void 
+delete_line (register struct textline *line)
 {
   if(!line->next && !line->prev) {
     line->data[0] = '\0' ;
@@ -151,10 +152,8 @@ delete_line(line)
    split splits 'line' right before the character pos
    */
 
-void
-split(line,pos)
-     register struct textline *line ;
-     register int pos ;
+void 
+split (register struct textline *line, register int pos)
 {
   register struct textline *p = alloc_line() ;
   
@@ -188,8 +187,7 @@ split(line,pos)
    */
 
 int 
-join(line)
-     register struct textline *line ;
+join (register struct textline *line)
 {
   register int ovfl ;
   
@@ -231,9 +229,8 @@ join(line)
   }
 }
 
-void
-insert_char(ch)
-     register int ch ;
+void 
+insert_char (register int ch)
 {
   register int i ;
   register char *s ;
@@ -279,8 +276,8 @@ insert_char(ch)
   }
 }
 
-void
-delete_char()
+void 
+delete_char (void)
 {
   register int i ;
   
@@ -295,8 +292,8 @@ delete_char()
   currline->len-- ;
 }
 
-void
-vedit_init()
+void 
+vedit_init (void)
 {
   register struct textline *p = alloc_line() ;
   
@@ -309,9 +306,8 @@ vedit_init()
   redraw_everything = NA ;
 }
 
-void
-read_file(filename)
-     char *filename ;
+void 
+read_file (char *filename)
 {
   FILE *fp ;
   int ch ;
@@ -336,15 +332,14 @@ read_file(filename)
 
 #define KEEP_EDITING -2
 
-int
-write_file(filename)
-     char *filename ;
+int 
+write_file (char *filename)
 {
   FILE *fp ;
   struct textline *p = firstline ;
   char abort[6];
   int aborted = 0;
-  getdata(0,0,"(S)ave, (A)bort, or (E)dit? [S]: ",abort,6,DOECHO,NULL,0);
+  getdata(0,0,"(S)ave, (A)bort, or (E)dit? [S]: ",abort,6,DOECHO,0);
   if (abort[0] == 'a' || abort[0] == 'A') {
     struct stat stbuf;
 #if 0
@@ -379,8 +374,8 @@ write_file(filename)
   return aborted;
 }
 
-void
-display_buffer()
+void 
+display_buffer (void)
 {
   register struct textline *p ;
   register int i ;
@@ -401,8 +396,8 @@ display_buffer()
 #define VTKEYS  (02)
 #define NORMAL  (00) 
 
-vedit(filename)
-     char *filename ;
+int 
+vedit (char *filename)
 {
   int ch ;
   int foo ;
@@ -707,6 +702,7 @@ vedit(filename)
     redraw_everything = NA ;
     move(curr_window_line,currpnt) ;
   }
+  return -1 ;
 }
 
 char *helptxt[] = {
@@ -732,7 +728,8 @@ char *helptxt[] = {
   "Ctrl-K  Delete to end of line",
   NULL } ;
 
-vedit_help()
+int 
+vedit_help (void)
 {
   int i ,off = 0, pos = 2  ;
   
@@ -754,4 +751,5 @@ vedit_help()
   igetch() ;
   clear() ;
   redraw_everything = YEA ;
+  return 0 ;
 }

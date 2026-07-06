@@ -23,6 +23,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <errno.h>          /* this may be just temporary */
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <stdlib.h>
 #ifdef NeXT
 # include <sys/wait.h>
 # include <sys/time.h>
@@ -39,9 +41,8 @@ extern SERVERDATA server;
 int chatfd = -1;
 int inchat = 0;
 
-unsigned short
-_read_daemoninfo(fname)
-char *fname;
+unsigned short 
+_read_daemoninfo (char *fname)
 {
   FILE *fp;
   char buf[5];
@@ -56,7 +57,8 @@ char *fname;
   return number;
 }
 
-_start_chat_daemon()
+int 
+_start_chat_daemon (void)
 {
   int pid;
   char *argv0 = "bbs.chatd";
@@ -77,9 +79,8 @@ _start_chat_daemon()
   return 0;
 }
 
-local_bbs_chat(chatid, pfd)
-char *chatid;
-LONG *pfd;
+int 
+local_bbs_chat (char *chatid, LONG *pfd)
 {
   CHATLINE sendbuf;
   int rc, daemon_started = 0;
@@ -165,7 +166,8 @@ setupchat:
   return S_CHATDERROR;
 }
 
-local_bbs_exit_chat()
+int 
+local_bbs_exit_chat (void)
 {
   if (chatfd != -1) {
     close(chatfd);
@@ -177,8 +179,8 @@ local_bbs_exit_chat()
   return S_OK;
 }
 
-local_bbs_chat_send(buf)
-char *buf;
+int 
+local_bbs_chat_send (char *buf)
 {
   int len = strlen(buf);
   if (chatfd == -1 || inchat == 0) return S_DENIED;
@@ -190,10 +192,8 @@ char *buf;
   return S_OK;
 }  
 
-remote_bbs_chat(chatid, pport, magicstr)
-char *chatid;
-unsigned short *pport;
-char *magicstr;
+int 
+remote_bbs_chat (char *chatid, unsigned short *pport, char *magicstr)
 {
   /* Assumes magicstr is big enough (should be 256 chars) */
   int daemon_started = 0;
@@ -230,7 +230,8 @@ char *magicstr;
   return S_OK;
 }
 
-remote_bbs_exit_chat()
+int 
+remote_bbs_exit_chat (void)
 {
   if (inchat) {
     inchat = 0;

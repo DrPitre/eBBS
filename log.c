@@ -32,9 +32,8 @@ int bbs_loglevel;
 char bbs_logsource[16];
 FILE *bbs_log;
 
-open_bbslog(logfile, loglevel)
-char *logfile;
-int loglevel;
+int 
+open_bbslog (char *logfile, int loglevel)
 {
   if (logfile == NULL) return S_BADFILENAME;
   strncpy(bbs_logfile, logfile, PATHLEN-1);
@@ -46,15 +45,15 @@ int loglevel;
   return S_OK;
 }
 
-close_bbslog()
+int 
+close_bbslog (void)
 {
   fclose(bbs_log);
   return S_OK;
 }
 
-void
-set_log_header(str)
-char *str;
+void 
+set_log_header (char *str)
 {
   char *p = str;
   int indx = 0;

@@ -20,14 +20,15 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "server.h"
 #include <ctype.h>
+#include <unistd.h>
 
 #define MAILERFILE "etc/mailers"
 
 /* For the bbs name and tempfile */
 extern SERVERDATA server;
 
-is_valid_address(addr)
-char *addr;
+int 
+is_valid_address (char *addr)
 {
   if (*addr == '\0') return 0;   /* blank */
   if (*addr == '-') return 0;    /* cannot begin with '-' */
@@ -39,20 +40,17 @@ char *addr;
   return 1;
 }
 
-spec_to_mailer(rec, mailer)
-char *rec;
-char *mailer;
+int
+spec_to_mailer (char *rec, void *mailer)
 {
   NAME prefix;
   rec = _extract_quoted(rec, prefix, sizeof(prefix));
-  rec = _extract_quoted(rec, mailer, sizeof(ADDR));
+  rec = _extract_quoted(rec, (char *)mailer, sizeof(ADDR));
   return S_OK;
 }
  
 char *
-lookup_mailer(addr, mailer)
-char *addr;
-char *mailer;
+lookup_mailer (char *addr, char *mailer)
 {
   char *colon;
   int rc;
@@ -64,8 +62,8 @@ char *mailer;
   return colon+1;  
 }
 
-ok_for_from_header(str)
-char *str;
+int 
+ok_for_from_header (char *str)
 {
   for (; str && *str; str++)
     if (strchr("<>;\"'\\|[]{}()%@!", *str)) return 0;
@@ -73,13 +71,8 @@ char *str;
   return 1;
 }
 
-LONG
-mail_file_to_outside(fname, subject, addrspec, is_forward, is_binary)
-char *fname;
-char *subject;
-char *addrspec;
-int is_forward;
-int is_binary;
+LONG 
+mail_file_to_outside (char *fname, char *subject, char *addrspec, int is_forward, int is_binary)
 {
   FILE *fp;
   ACCOUNT acct;
@@ -143,17 +136,14 @@ int is_binary;
 
   bbslog(3, "FORWARD '%s' to %s by %s\n", subject, address, acct.userid);
 
-  rc = execute(execbuf, NULL, server.tempfile, "/dev/null", "/dev/null", NULL);
+  rc = execute(execbuf, NULL, server.tempfile, "/dev/null", "/dev/null", NULL, 0);
 
   unlink(server.tempfile);
   return (rc == 0 ? S_OK : S_SYSERR);
 }
 
-LONG
-forward_file_to_outside(fname, title, is_binary)
-char *fname;
-char *title;
-int is_binary;
+LONG 
+forward_file_to_outside (char *fname, char *title, int is_binary)
 {
   LONG rc;
   

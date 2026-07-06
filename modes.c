@@ -24,8 +24,7 @@ char *global_modestrs[BBS_MAX_MODE+1];
 char global_modechars[BBS_MAX_MODE+1];
 
 char *
-ModeToString(mode)
-SHORT mode;
+ModeToString(SHORT mode)
 {
   if (global_modestrs[0] == NULL) {
     bbs_get_modestrings(global_modestrs);
@@ -39,8 +38,7 @@ SHORT mode;
 }
 
 char
-ModeToChar(mode)
-SHORT mode;
+ModeToChar(SHORT mode)
 {
   if (global_modechars[0] == '\0') {
     bbs_get_modechars(global_modechars);

@@ -21,6 +21,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "client.h"
 #include <signal.h>
 #include <time.h>
+#include <stdlib.h>
+#include <unistd.h>
 #ifdef REMOTE_CLIENT
 # include <pwd.h>
 # include <stdlib.h>
@@ -44,16 +46,15 @@ extern char *optarg;
 extern int optind;
 #endif
 
-extern PromptForAccountInfo();
-extern SetPermTable();
+extern int PromptForAccountInfo(ACCOUNT *, int);
+extern int SetPermTable();
 extern char *_menudesc_file;
-extern NDoMenu();
+extern int NDoMenu(char *);
 extern void page_handler __P((int));
 extern char *Ctime __P((time_t *));
 
-bbperror(code, str)
-LONG code;
-char *str;
+int 
+bbperror (LONG code, char *str)
 {
   char *errstr;
   if (code > S_MAXERROR) errstr = "unknown error";
@@ -63,8 +64,8 @@ char *str;
   return 0;
 }
 
-disconnect(status)
-int status;
+int 
+disconnect (int status)
 {
   unlink(c_tempfile);
   bbs_disconnect();
@@ -115,27 +116,30 @@ int status;
   exit(status);
 }
 
-generic_abort()		/* general "bail and exit" */
+int 
+generic_abort (void)		/* general "bail and exit" */
 {
   disconnect(EXIT_CLIERROR);
+  return 0;
 }
 
 #ifdef REMOTE_CLIENT
-bbslib_abort()
+int
+bbslib_abort(void)
 {
   disconnect(EXIT_LOSTCONN);
+  return 0;
 }
 #endif
 
-void
-sig_handler(sig)
-int sig;
+void 
+sig_handler (int sig)
 {
   disconnect(sig == SIGALRM ? EXIT_TIMEDOUT : sig);
 }
 
 void
-hit_alarm_clock()
+hit_alarm_clock (int sig)
 {
   if (!input_active) {
     disconnect(EXIT_TIMEDOUT);
@@ -145,21 +149,25 @@ hit_alarm_clock()
   if (myinfo.idletimeout) alarm((int)myinfo.idletimeout*60);
 }
 
-set_idle_alarm()
+int 
+set_idle_alarm (void)
 {
   if (myinfo.idletimeout != 0) {
     signal(SIGALRM, hit_alarm_clock);
     alarm((int)myinfo.idletimeout*60);
   }
+  return 0;
 }
 
-cancel_idle_alarm()
+int 
+cancel_idle_alarm (void)
 {
   alarm(0);
+  return 0;
 }
 
-void
-InitializeTerminal()
+void 
+InitializeTerminal (void)
 {
   TERM t;
 #ifdef REMOTE_CLIENT
@@ -213,8 +221,8 @@ InitializeCharset()
   }
 }
 
-Login(newok)
-SHORT newok;
+int
+Login(SHORT newok)
 {
   ACCOUNT acct;
   int rc;
@@ -263,8 +271,8 @@ login_switch:
 }
 
 #ifdef REMOTE_CLIENT
-usage(prog)
-char *prog;
+void
+usage(char *prog)
 {
   fprintf(stderr, 
   "Usage: %s [-c charset] [-d tmpdir] [-e editor] [-m menu-file]\n", prog);
@@ -273,9 +281,8 @@ char *prog;
 }
 #endif
 
-main(argc, argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
   int rc;
   PATH fname;

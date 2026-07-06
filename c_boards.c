@@ -29,8 +29,8 @@ NAMELIST boardlist;
 /* stuff in c_users.c for the permission mask setting */
 extern LONG SetPermMenu __P((LONG));
 
-CheckBoardName(bname)
-char *bname;
+int 
+CheckBoardName (char *bname)
 {
   BOARD buf;
   if (bname[0] == '\0') return 1;
@@ -40,11 +40,10 @@ char *bname;
 }
 
 /*ARGSUSED*/
-AllBoardsFunc(indx, board, info)
-int indx;
-BOARD *board;
-struct enum_info *info;
+int
+AllBoardsFunc (int indx, BOARD *board, void *infoarg)
 {
+  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints(" %-16s   %-58s\n", "Name", "Description");
@@ -81,7 +80,8 @@ struct enum_info *info;
   return S_OK;
 }
 
-Boards()
+int 
+Boards (void)
 {
   struct enum_info info;
   info.count = 0;
@@ -97,11 +97,10 @@ Boards()
 }
 
 /*ARGSUSED*/
-BoardCountsFunc(indx, board, info)
-int indx;
-BOARD *board;
-struct enum_info *info;
+int
+BoardCountsFunc (int indx, BOARD *board, void *infoarg)
 {
+  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints(" %-16s   %6s %6s   %-30s\n", "Board", 
@@ -141,7 +140,8 @@ struct enum_info *info;
   return S_OK;
 }
 
-BoardCounts()
+int 
+BoardCounts (void)
 {
   struct enum_info info;
   SHORT flags;
@@ -172,7 +172,9 @@ BoardCounts()
   return PARTUPDATE;
 }
 
-SelectBoard()
+/*ARGSUSED*/
+int
+SelectBoard (char *arg)
 {
   NAME newboard;
   move(2,0);
@@ -195,7 +197,8 @@ SelectBoard()
   return (FULLUPDATE | NEWDIRECT);
 }
 
-Zap()
+int 
+Zap (void)
 {
   NAME zapboard;
   BOARD brec;
@@ -221,7 +224,8 @@ Zap()
   return PARTUPDATE;
 }
 
-Visit()
+int 
+Visit (void)
 {
   NAME visitboard;
   char ans[4];
@@ -257,9 +261,8 @@ Visit()
   return FULLUPDATE;
 }
 
-SetBoardPerms(brec, postp)
-BOARD *brec;
-int postp;
+int 
+SetBoardPerms (BOARD *brec, int postp)
 {
   LONG newperms;
   move(2,0);
@@ -276,7 +279,8 @@ int postp;
   else return -1;
 }
 
-AddBoard()
+int 
+AddBoard (void)
 {
   BOARD board;
   int y, grok;
@@ -325,7 +329,8 @@ AddBoard()
   return FULLUPDATE;
 }
 
-DeleteBoard()
+int 
+DeleteBoard (void)
 {
   NAME namebuf;
   char ans[4];
@@ -355,7 +360,8 @@ DeleteBoard()
   return FULLUPDATE;
 }
 
-ChangeBoard()
+int 
+ChangeBoard (void)
 {
   NAME namebuf, oldname;
   BOARD brec;

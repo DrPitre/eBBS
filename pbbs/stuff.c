@@ -23,7 +23,11 @@
 
 #include <stdio.h>
 #include <sys/param.h>
+#include <sys/wait.h>
 #include <signal.h>
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
 #include "osdeps.h"
 #if LACKS_MALLOC_H
 # include <stdlib.h>
@@ -32,6 +36,7 @@
 #endif
 #include <fcntl.h>
 #include "io.h"
+#include "screen.h"
 
 #define MAXENVS (200)
 
@@ -46,16 +51,19 @@ int gotsigchld;          /* for communication with SIGCHLD handler */
 
 int g_child_pid = -1;
 
-dumbreturn()
+int 
+dumbreturn (void)
 {
     int ch ;
     prints("Press [RETURN] to continue") ;
     while((ch = igetch()) != EOF)
         if(ch == '\n' || ch == '\r')
     	    break ;
+    return 0 ;
 }
 
-pressreturn()
+int 
+pressreturn (void)
 {
     char c ;
     if (dumb_term) return (dumbreturn());
@@ -66,16 +74,18 @@ pressreturn()
     return 0 ;
 }
 
-bell()
+int 
+bell (void)
 {
     fprintf(stderr,"%c",CTRL('G')) ;
+    return 0 ;
 }
 
 char *bbsenv[MAXENVS] ;
 int numbbsenvs = 0 ;
  
-bbssetenv(env,val)
-char *env, *val ;
+int 
+bbssetenv (char *env, char *val)
 {
     register int i,len ;
  
@@ -95,6 +105,7 @@ char *env, *val ;
     strcpy(bbsenv[i],env) ;
     strcat(bbsenv[i],"=") ;
     strcat(bbsenv[i],val) ;
+    return 0 ;
 }
 
 #define LOOKFIRST  (0)
@@ -102,9 +113,8 @@ char *env, *val ;
 #define QUOTEMODE  (2)
 
 #if 0
-void
-sigchld_handler(sig)
-int sig;
+void 
+sigchld_handler (int sig)
 {
     if (sig == SIGCHLD) {
         gotsigchld = 1;
@@ -113,8 +123,8 @@ int sig;
 }
 #endif
 
-do_exec(com,wd)
-char *com, *wd ;
+int 
+do_exec (char *com, char *wd)
 {
     char path[MAXFILELEN] ;
     char pcom[MAXCOMSZ] ;
@@ -150,13 +160,14 @@ char *com, *wd ;
               break ;
             continue ;
         }
-        if(pmode == LOOKFIRST)
+        if(pmode == LOOKFIRST) {
           if(pcom[i] != ' ') {
               arglist[argptr++] = &pcom[i] ;
               if(argptr+1 == MAXARGS)
                 break ;
               pmode = LOOKLAST ;
           } else continue ;
+        }
         if(pcom[i] == ' ') {
             pmode = LOOKFIRST ;
             pcom[i] = '\0' ;
@@ -215,8 +226,8 @@ char *com, *wd ;
 
 #define BINDIR "bin/"
 
-do_pipe_more(com)
-char *com ;
+int 
+do_pipe_more (char *com)
 {
     char path[MAXPATHLEN] ;
     char pcom[MAXCOMSZ] ;
@@ -254,13 +265,14 @@ char *com ;
               break ;
             continue ;
         }
-        if(pmode == LOOKFIRST)
+        if(pmode == LOOKFIRST) {
           if(pcom[i] != ' ') {
               arglist[argptr++] = &pcom[i] ;
               if(argptr+1 == MAXARGS)
                 break ;
               pmode = LOOKLAST ;
           } else continue ;
+        }
         if(pcom[i] == ' ') {
             pmode = LOOKFIRST ;
             pcom[i] = '\0' ;

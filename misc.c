@@ -19,36 +19,36 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "server.h"
+#include <unistd.h>
 
 /* Miscellaneous server functions. */
 
 #define HOME        "home"
 
-get_home_directory(userid, buf)
-char *userid;
-char *buf;
+int 
+get_home_directory (char *userid, char *buf)
 {
   strcpy(buf, HOME);
   strcat(buf, "/");
   strcat(buf, userid);
+  return S_OK;
 }
 
 #define MAILDIR     "mail"
 
-get_mail_directory(userid, buf)
-char *userid;
-char *buf;
+int 
+get_mail_directory (char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, MAILDIR);
+  return S_OK;
 }
 
 #define PLANFILE    "plan"
 
-local_bbs_get_plan(userid, buf)
-char *userid;
-char *buf;
+int 
+local_bbs_get_plan (char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
@@ -58,8 +58,8 @@ char *buf;
 
 #define SIGFILE     "signature"
 
-local_bbs_get_signature(buf)
-char *buf;
+int 
+local_bbs_get_signature (char *buf)
 {
   get_home_directory(my_userid(), buf);
   strcat(buf, "/");
@@ -69,9 +69,8 @@ char *buf;
 
 #define BOARDHOME  "boards"
 
-get_board_directory(bname, buf)
-char *bname;
-char *buf;
+int 
+get_board_directory (char *bname, char *buf)
 {
   strcpy(buf, BOARDHOME);
   strcat(buf, "/");
@@ -81,8 +80,8 @@ char *buf;
 
 #define ISSUEFILE   "etc/issue"
 
-local_bbs_get_issue(buf)
-char *buf;
+int 
+local_bbs_get_issue (char *buf)
 {
   strcpy(buf, ISSUEFILE);
   return S_OK;
@@ -90,8 +89,8 @@ char *buf;
 
 #define INFOFILE   "etc/info"
 
-local_bbs_get_info(buf)
-char *buf;
+int 
+local_bbs_get_info (char *buf)
 {
   strcpy(buf, INFOFILE);
   return S_OK;
@@ -99,8 +98,8 @@ char *buf;
 
 #define GNUFILE    "etc/COPYING"
 
-local_bbs_get_license(buf)
-char *buf;
+int 
+local_bbs_get_license (char *buf)
 {
   strcpy(buf, GNUFILE);
   return S_OK;
@@ -108,15 +107,15 @@ char *buf;
 
 #define WELCFILE   "etc/welcome"
 
-local_bbs_get_welcome(buf)
-char *buf;
+int 
+local_bbs_get_welcome (char *buf)
 {
   strcpy(buf, WELCFILE);
   return S_OK;
 }
 
-local_bbs_set_welcome(buf)
-char *buf;
+int 
+local_bbs_set_welcome (char *buf)
 {
   int rc = 0;
   if (buf == NULL) {

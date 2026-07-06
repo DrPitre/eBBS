@@ -31,9 +31,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define FILE_TYPE_MAIL	1
 #define FILE_TYPE_POST	2
 
-extern int OpenMailbox(), CloseMailbox(), MailDisplay();
-extern int CloseMailbox(), CloseBoard(), PostDisplay();
-extern char *Ctime();
+extern int OpenMailbox(int *, int, int *), CloseMailbox(void), MailDisplay(HEADER *, int, int, int);
+extern int CloseBoard(void), PostDisplay(HEADER *, int, int, int);
+extern char *Ctime(time_t *);
 
 struct readnewstruct {
   int nummsgs;
@@ -44,12 +44,8 @@ struct readnewstruct {
   char *thread;
 };
 
-ReadNewMessage(type, hptr, numleft, options, openflags)
-int type;
-HEADER *hptr;
-int numleft;
-int options;
-int openflags;
+int 
+ReadNewMessage (int type, HEADER *hptr, int numleft, int options, int openflags)
 {
   char ans[10], promptstr[80];
   clear();
@@ -85,11 +81,10 @@ int openflags;
   return NEW_READ;
 }
 
-NewMailReadfn(indx, hdr, info)
-int indx;
-HEADER *hdr;
-struct readnewstruct *info;
+int
+NewMailReadfn (int indx, HEADER *hdr, void *infoarg)
 {
+  struct readnewstruct *info = (struct readnewstruct *)infoarg;
   info->excode = ReadNewMessage(FILE_TYPE_MAIL, hdr, info->nummsgs,
                                 0, info->openflags);
   if (info->nummsgs > 0) info->nummsgs--;
@@ -99,9 +94,8 @@ struct readnewstruct *info;
 }  
 
 /*ARGSUSED*/
-SequentialReadMail(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+SequentialReadMail (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   struct readnewstruct rns;
   rns.nummsgs = -1;
@@ -115,7 +109,8 @@ int currmsg, numrecs, openflags;
   return (rns.numread ? (FULLUPDATE | FETCHNEW) : FULLUPDATE);
 }
 
-ReadNewMail()
+int 
+ReadNewMail (void)
 {
   struct readnewstruct rns;
   int servresp;
@@ -139,9 +134,8 @@ ReadNewMail()
   return FULLUPDATE;
 }
 
-IsSameThread(title1, title2)
-char *title1;
-char *title2;
+int 
+IsSameThread (char *title1, char *title2)
 {
   /* Function to see if two posts are in the same thread */
   if (!strncasecmp(title1, "Re: ", 4)) title1 += 4;
@@ -149,11 +143,10 @@ char *title2;
   return (!strcasecmp(title1, title2));
 }    
 
-NewPostReadfn(indx, hdr, info)
-int indx;
-HEADER *hdr;
-struct readnewstruct *info;
+int
+NewPostReadfn (int indx, HEADER *hdr, void *infoarg)
 {
+  struct readnewstruct *info = (struct readnewstruct *)infoarg;
   if (info->thread != NULL && !IsSameThread(info->thread, hdr->title)) {
     info->excode = NEW_PASS;      
   }
@@ -171,9 +164,8 @@ struct readnewstruct *info;
 }  
 
 /*ARGSUSED*/
-SequentialRead(hptr, currmsg, numrecs, openflags)
-HEADER *hptr;
-int currmsg, numrecs, openflags;
+int 
+SequentialRead (HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   char ans[7];
   TITLE threadtitle;
@@ -206,14 +198,13 @@ int currmsg, numrecs, openflags;
 }
 
 /*ARGSUSED*/
-ReadNewPosts(indx, board, disp)
-int indx;
-BOARD *board;
-int *disp;
+int
+ReadNewPosts (int indx, BOARD *board, void *disparg)
 {
   int openflags, newmsgs;
   struct readnewstruct rns;
   char msgbuf[80], ans[4];
+  int *disp = (int *)disparg;
 
   clear();
   sprintf(msgbuf, "Scanning %s ...\n", board->name);
@@ -246,7 +237,8 @@ int *disp;
   return (*disp == NEW_QUIT ? ENUM_QUIT : S_OK);
 }
 
-ReadNew()
+int 
+ReadNew (void)
 {
   NAME savecurr;
   int disp = NEW_READ;

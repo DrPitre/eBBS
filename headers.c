@@ -20,13 +20,13 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "server.h"
 #include <time.h>
+#include <unistd.h>
 
 #define HEADER_TAG_SIZE 11
 #define HEADERSIZE      128  /* must be greater than HEADER_TAG_SIZE+ADDRLEN */
 
-read_headers(fname, hdr)
-char *fname;
-HEADER *hdr;
+int 
+read_headers (char *fname, HEADER *hdr)
 {
   char buf[HEADERSIZE];
   FILE *fp;
@@ -43,11 +43,11 @@ HEADER *hdr;
     strip_trailing_space(buf);
     if (buf[0] == '\0') break;
     else if (!strncmp(buf, "From: ", 6)) {
-      if (space = strchr(hdrdata, ' ')) *space = '\0';
+      if ((space = strchr(hdrdata, ' '))) *space = '\0';
       strncpy(hdr->owner, hdrdata, sizeof(hdr->owner)-1);
     }
     else if (!strncmp(buf, "Posted By: ", 11)) {
-      if (space = strchr(hdrdata, ' ')) *space = '\0';
+      if ((space = strchr(hdrdata, ' '))) *space = '\0';
       strncpy(hdr->owner, hdrdata, sizeof(hdr->owner)-1);
     }
     else if (!strncmp(buf, "Title: ", 7))
@@ -65,11 +65,10 @@ struct writetostruct {
   char *buf;
 };
 
-write_to_header(indx, userid, info)
-int indx;
-char *userid;
-struct writetostruct *info;
+int
+write_to_header (int indx, char *userid, void *infoarg)
 {
+  struct writetostruct *info = (struct writetostruct *)infoarg;
   int i;
   int len = strlen(info->buf);
   int needed = strlen(userid)+3;
@@ -86,11 +85,8 @@ struct writetostruct *info;
 
 /* What a mess. I should use stdio. */
 
-write_mail_headers(fd, hdr, username, list)
-int fd;
-HEADER *hdr;
-char *username;
-NAMELIST list;
+int 
+write_mail_headers (int fd, HEADER *hdr, char *username, NAMELIST list)
 {
   char fmt[40];
   char hdrline[HEADERSIZE];
@@ -124,13 +120,11 @@ NAMELIST list;
     write(fd, hdrline, strlen(hdrline));
   }
   write(fd, "\n", 1);
+  return S_OK;
 }
 
-write_post_headers(fd, hdr, username, bname)
-int fd;
-HEADER *hdr;
-char *username;
-char *bname;
+int 
+write_post_headers (int fd, HEADER *hdr, char *username, char *bname)
 {
   char fmt[40];
   char hdrline[HEADERSIZE];
@@ -158,14 +152,13 @@ char *bname;
   write(fd, hdrline, strlen(hdrline));
 
   write(fd, "\n", 1);
+  return S_OK;
 }
 
 /* This one is used by the client side */
 
-parse_to_list(list, fname, myname)
-NAMELIST *list;
-char *fname;
-char *myname;
+int 
+parse_to_list (NAMELIST *list, char *fname, char *myname)
 {
   FILE *fp;
   char header[HEADERSIZE];
@@ -178,7 +171,7 @@ char *myname;
     if (gotit && strncmp(header, "    ", 4)) break;
     gotit = 1;
     ptr = header+4;
-    while (id = strtok(ptr, " \t\n,")) {
+    while ((id = strtok(ptr, " \t\n,"))) {
       ptr = NULL;
       if (strcmp(id, myname) && !is_in_namelist(*list, id))
         add_namelist(list, id, NULL);

@@ -75,7 +75,7 @@ typedef char ACCESSCODES[MAX_CLNTCMDS];
 /* Structures used in the bbs library functions. */
 
 typedef struct _INITINFO {
-  int (*abortfn)();
+  int (*abortfn)(void);
   char *tmpdir;
 } INITINFO;
 
@@ -277,7 +277,7 @@ void create_namelist __P((NAMELIST *));
 int add_namelist __P((NAMELIST *, char *, char *));
 int remove_namelist __P((NAMELIST *, char *));
 int is_in_namelist __P((NAMELIST, char *));
-int apply_namelist __P((NAMELIST, int(), void *));
+int apply_namelist __P((NAMELIST, int (*)(int, char *, void *), void *));
 int read_namelist __P((char *, NAMELIST *));
 int write_namelist __P((char *, NAMELIST));
 
@@ -285,3 +285,4 @@ int read_headers __P((char *, HEADER *));
 int write_mail_headers __P((int, HEADER *, char *, NAMELIST));
 int write_post_headers __P((int, HEADER *, char *, char *));
 int parse_to_list __P((NAMELIST *, char *, char *));
+int _record_enumerate __P((char *, int, int (*)(int, char *, void *), void *));

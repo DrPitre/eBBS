@@ -20,6 +20,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "server.h"
 #include <time.h>
+#include <stdlib.h>
 
 /* readbits file format:
 bname       :ordr:stampxxx:10101010...
@@ -34,18 +35,20 @@ if bname is empty, the readbits are for Mail.
  
 #define READBITFILE "readbits"
 
-get_readbit_file(userid, buf)
-char *userid;
-char *buf;
+int 
+get_readbit_file (char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, READBITFILE);
+  return S_OK;
 }
 
-expand_bitent(bitent, ba)
-char *bitent;    /* The readbit data */
-char *ba;        /* char array of size READBITSIZE, filled */
+int 
+expand_bitent (
+    char *bitent,    /* The readbit data */
+    char *ba        /* char array of size READBITSIZE, filled */
+)
 {
   char *eob;
   char currval;
@@ -70,11 +73,14 @@ char *ba;        /* char array of size READBITSIZE, filled */
     }
   }
   *bitent = '\0';
+  return S_OK;
 }
 
-compress_bitent(bitent, ba)
-char *bitent;     /* The readbit data */
-char *ba;         /* char array of size READBITSIZE, empty */
+int 
+compress_bitent (
+    char *bitent,     /* The readbit data */
+    char *ba         /* char array of size READBITSIZE, empty */
+)
 {
   int ct;
   char *rbrkt;
@@ -83,7 +89,7 @@ char *ba;         /* char array of size READBITSIZE, empty */
 
   while (*bitent && *bitent != '\n') {
     if (*(bitent+1) == '[') {
-      if (rbrkt = strchr(bitent, ']')) *rbrkt = '\0';
+      if ((rbrkt = strchr(bitent, ']'))) *rbrkt = '\0';
       for (ct = atoi(bitent+2); ct; ct--) *ba++ = *bitent;
       if (rbrkt) {
 	*rbrkt = ']';
@@ -95,28 +101,28 @@ char *ba;         /* char array of size READBITSIZE, empty */
     }
     bitent++;
   }
+  return S_OK;
 }
 
-parse_readinfo(rec, rinfo)
-char *rec;
-READINFO *rinfo;
+int
+parse_readinfo (char *rec, void *rinfoarg)
 {
+  READINFO *rinfo = (READINFO *)rinfoarg;
   rinfo->stamp = hex2LONG(rec+BIT_STAMP_OFFSET);
   compress_bitent(rec+BIT_DATA_OFFSET, rinfo->bits);
   return S_OK;
 }
 
-parse_readorder(rec, order)
-char *rec;
-SHORT *order;
+int
+parse_readorder (char *rec, void *orderarg)
 {
+  SHORT *order = (SHORT *)orderarg;
   *order = hex2SHORT(rec+BIT_ORDER_OFFSET);
   return S_OK;
 }
 
-get_bitfile_ent(bname, rinfo)
-char *bname;
-READINFO *rinfo;
+int 
+get_bitfile_ent (char *bname, READINFO *rinfo)
 {
   int rc;
   PATH bitfile;
@@ -136,10 +142,10 @@ struct _bitsetstruct {
   READINFO *rinfo;
 };
 
-format_readinfo(rec, info)
-char *rec;
-struct _bitsetstruct *info;
+int
+format_readinfo (char *rec, void *infoarg)
 {
+  struct _bitsetstruct *info = (struct _bitsetstruct *)infoarg;
   if (info->bname) {
     memset(rec+BIT_BNAME_OFFSET, ' ', NAMELEN);
     memcpy(rec+BIT_BNAME_OFFSET, info->bname, strlen(info->bname));
@@ -162,18 +168,15 @@ struct _bitsetstruct *info;
 
 /* This can GO AWAY if I ever fix _record_replace to only pass two args */
 
-update_readinfo(newrec, oldrec, info)
-char *newrec;
-char *oldrec;
-struct _bitsetstruct *info;
+int
+update_readinfo (char *newrec, char *oldrec, void *info)
 {
   strcpy(newrec, oldrec);
   return (format_readinfo(newrec, info));
 }
 
-set_bitfile_ent(bname, rinfo)
-char *bname;
-READINFO *rinfo;
+int 
+set_bitfile_ent (char *bname, READINFO *rinfo)
 {
   int rc;
   struct _bitsetstruct bs;
@@ -199,33 +202,30 @@ READINFO *rinfo;
   return rc;
 }
     
-set_readbit(rinfo, fileid)
-READINFO *rinfo;
-SHORT fileid;
+int
+set_readbit(READINFO *rinfo, SHORT fileid)
 {
   if (fileid <= 0 || fileid > READBITSIZE) return S_OUTOFRANGE;
   rinfo->bits[fileid-1] = '1';
   return S_OK;
 }
 
-clear_all_readbits(rinfo)
-READINFO *rinfo;
+int 
+clear_all_readbits (READINFO *rinfo)
 {
   memset(rinfo->bits, '0', sizeof(rinfo->bits));
   return S_OK;
 }
 
-test_readbit(rinfo, fileid)
-READINFO *rinfo;
-SHORT fileid;
+int
+test_readbit(READINFO *rinfo, SHORT fileid)
 {
   if (fileid <= 0 || fileid > READBITSIZE) return 0;
   return (rinfo->bits[fileid-1] == '1');
 }
 
-get_read_order(bname, order)
-char *bname;
-SHORT *order;
+int 
+get_read_order (char *bname, SHORT *order)
 {
   int rc;
   PATH bitfile;
@@ -237,9 +237,8 @@ SHORT *order;
   return rc;
 }
 
-set_read_order(bname, order)
-char *bname;
-SHORT order;
+int 
+set_read_order (char *bname, SHORT order)
 {
   int rc;
   struct _bitsetstruct bs;
@@ -268,10 +267,8 @@ SHORT order;
 }
     
 /*ARGSUSED*/
-fix_readbit_entry(indx, rec, ncs)
-int indx;
-char *rec;
-struct namechange *ncs;
+int 
+fix_readbit_entry (int indx, char *rec, struct namechange *ncs)
 {
   int rc;
   PATH bitfile;
@@ -300,9 +297,8 @@ struct namechange *ncs;
 
 #define NOZAP_FILE "nozap"
 
-local_bbs_zap_board(bname, dozap)
-char *bname;
-SHORT dozap;
+int 
+local_bbs_zap_board (char *bname, SHORT dozap)
 {
   int rc;
   PATH nzfile;

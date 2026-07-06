@@ -24,12 +24,14 @@
 #include <stdio.h>
 #include "osdeps.h"
 #include "io.h"
+#include "screen.h"
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <unistd.h>
 
 #if USES_SYS_SELECT_H
 # include <sys/select.h>
@@ -49,56 +51,61 @@ unsigned char inbuf[IBUFSIZE] ;
 int ibufsize = 0 ;
 int icurrchar = 0 ;
 
-oflush()
+int 
+oflush (void)
 {
     if(obufsize)
       write(1,outbuf,obufsize) ;
     obufsize = 0 ;
+    return 0 ;
 }
 
-output(s,len)
-char *s ;
+int ochar(int c);
+
+int
+output (char *s, int len)
 {
     int i;
     for(i = 0; i < len; i++)
-      ochar(s[i]);
+      ochar((unsigned char)s[i]);
+    return 0 ;
 }
 
-ochar(c)
-unsigned char c;
+int
+ochar (int c)
 {
     if(obufsize > OBUFSIZE-1) {  /* doin a oflush */
         write(1,outbuf,obufsize) ;
         obufsize = 0 ;
     }
      outbuf[obufsize++] = conv_table[c][1] ;
+    return c ;
 }
 
 int i_newfd = 0;
 struct timeval i_to, *i_top = NULL ;
-int (*flushf)() = NULL ;
+int (*flushf)(void) = NULL ;
 
 #if 0
 int serversock = 0;
 int in_child = 0;
 int (*sockf)() = NULL;
 
-add_serversock(fd)
-int fd;
+int 
+add_serversock (int fd)
 {
     serversock = fd;
 }
 
-add_servhandler(func)
-int (*func)();
+int 
+add_servhandler (int (*func)(void))
 {
     sockf = func;
 }
 #endif
 
-add_io(fd,timeout)
-int fd ;
-int timeout ;
+int 
+add_io (int fd, int timeout)
 {
     i_newfd = fd ;
     if(timeout) {
@@ -106,21 +113,24 @@ int timeout ;
         i_to.tv_usec = 0 ;
         i_top = &i_to ;
     } else i_top = NULL ;
+    return 0 ;
 }
 
-add_flush(flushfunc)
-int (*flushfunc)() ;
+int
+add_flush(int (*flushfunc)(void))
 {
     flushf = flushfunc ;
+    return 0 ;
 }
 
-num_in_buf()
+int 
+num_in_buf (void)
 {
     return icurrchar - ibufsize ;
 }
 
-int
-igetch()
+int 
+igetch (void)
 {
 igetagain:
     if(ibufsize == icurrchar) {
@@ -222,10 +232,8 @@ selectagain:
     return conv_table[inbuf[icurrchar++]][0] ;
 }
 
-getdata(line,col,prompt,buf,len,echo,cancel)
-int line,col ;
-char *prompt, *buf ;
-int len, echo, cancel ;
+int 
+getdata (int line, int col, char *prompt, char *buf, int len, int echo, int cancel)
 {
     int ch ;
     int clen = 0 ;

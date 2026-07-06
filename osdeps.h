@@ -67,7 +67,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    If your C library does not have vfork(2) define NO_VFORK.
 */
 
-#if AIX || IRIX || AUX
+#if AIX || IRIX || AUX || DARWIN
 # define NO_VFORK 1
 #endif
 
@@ -148,7 +148,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    Many of them have a utmpx file which does include this field.
 */
 
-#if SOLARIS || UNIXWARE || IRIX
+#if SOLARIS || UNIXWARE || IRIX || DARWIN
 # define USES_UTMPX 1
 #endif
 
@@ -173,5 +173,5 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
 /* Function prototyping */
 
 #ifndef __P
-# define __P(x) ()
+# define __P(x) x
 #endif

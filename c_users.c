@@ -26,12 +26,14 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #include <signal.h>
 #include <time.h>
+#include <ctype.h>
+#include <unistd.h>
 
 NAMELIST acctlist;
 extern LOGININFO myinfo;     /* for idle timeout in Monitor */
 
-CheckUserid(userid)
-char *userid;
+int 
+CheckUserid (char *userid)
 {
   ACCOUNT acct;
   if (userid[0] == '\0') return 1;
@@ -40,9 +42,8 @@ char *userid;
   return 0;
 }
 
-PromptForAccountInfo(acct, for_self)
-ACCOUNT *acct;
-int for_self;
+int 
+PromptForAccountInfo (ACCOUNT *acct, int for_self)
 {
   PASSWD passcfm;
   char ans[4];
@@ -77,7 +78,7 @@ int for_self;
       if (!passok) bbperror(S_BADPASSWD, NULL);
     } while (!passok);
     getdata(lineno+1,0,"Confirm Passwd: ", passcfm, PASSLEN+1, NOECHO, 0);
-    if (cfm = strcmp(acct->passwd, passcfm))
+    if ((cfm = strcmp(acct->passwd, passcfm)))
       prints("\nPasswords did not match! Try again.\n");
   }
   if (lineno) lineno++;
@@ -99,11 +100,10 @@ int for_self;
 }
 
 /*ARGSUSED*/
-AllUsersFunc(indx, acct, info)
-int indx;
-ACCOUNT *acct;
-struct enum_info *info;
+int
+AllUsersFunc (int indx, ACCOUNT *acct, void *infoarg)
 {
+  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints("%-14s %-30s   %s\n","User Id", "User Name", "Last Login");
@@ -137,7 +137,8 @@ struct enum_info *info;
   return S_OK;
 }
 
-AllUsers()
+int 
+AllUsers (void)
 {
   struct enum_info info;
   info.count = 0;
@@ -153,11 +154,10 @@ AllUsers()
 }
 
 /*ARGSUSED*/
-OnlineUsersFunc(indx, urec, info)
-int indx;
-USEREC *urec;
-struct enum_info *info;
+int
+OnlineUsersFunc (int indx, USEREC *urec, void *infoarg)
 {
+  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints("%-12s    %-25s %-25s %s %s\n", 
@@ -194,7 +194,8 @@ struct enum_info *info;
   return S_OK;
 }
 
-OnlineUsers()
+int 
+OnlineUsers (void)
 {
   struct enum_info info;
   info.count = 0;
@@ -221,7 +222,8 @@ struct shorturec {
 
 int global_ulist_sz;
 
-SetupGlobalList()
+int 
+SetupGlobalList (void)
 {
   global_ulist_sz = (t_lines - 4) * 4;
   global_ulist = 
@@ -236,10 +238,8 @@ SetupGlobalList()
 }
 
 /*ARGSUSED*/
-FillShortUserList(indx, urec, arg)
-int indx;
-USEREC *urec;
-void *arg;
+int 
+FillShortUserList (int indx, USEREC *urec, void *arg)
 {
   int i;
   for (i=0; i<global_ulist_sz; i++)
@@ -264,7 +264,8 @@ void *arg;
   return S_OK;
 }
 
-DoShortUserList()
+int 
+DoShortUserList (void)
 {
   int i, y = 3, x = 0, ucount = 0;
   time_t now;
@@ -301,7 +302,8 @@ DoShortUserList()
   return ucount;
 }
 
-ShortList()
+int 
+ShortList (void)
 {
   int i;
   if (global_ulist == NULL) {
@@ -317,7 +319,8 @@ int monitor_max;
 int monitor_idle;
 char global_modechar_key[75];
 
-form_modechar_key()
+int 
+form_modechar_key (void)
 {
   SHORT i;
   int left;
@@ -339,8 +342,8 @@ form_modechar_key()
   return 0;
 }
 
-void
-monitor_refresh(sig)
+void 
+monitor_refresh (int sig)
 {
   int i, boottime;
   if (sig) signal(sig, SIG_IGN);
@@ -360,7 +363,8 @@ monitor_refresh(sig)
   alarm(MONITOR_REFRESH);
 }
 
-Monitor()
+int 
+Monitor (void)
 {
   void (*asig)();
   char ch;
@@ -394,7 +398,8 @@ or CTRL-D to exit.\n");
   return FULLUPDATE;
 }
 
-SetPasswd()
+int 
+SetPasswd (void)
 {
   ACCOUNT acct;
   int rc;
@@ -436,7 +441,8 @@ SetPasswd()
   return PARTUPDATE;
 }
 
-SetUsername()
+int 
+SetUsername (void)
 {
   UNAME username;
   int rc;
@@ -453,7 +459,8 @@ SetUsername()
   return PARTUPDATE;
 }
 
-SetAddress()
+int 
+SetAddress (void)
 {
   MAIL email;
   int rc;
@@ -470,7 +477,8 @@ SetAddress()
   return PARTUPDATE;
 }
 
-SetTermtype()
+int 
+SetTermtype (void)
 {
   TERM terminal;
   int rc;
@@ -500,7 +508,8 @@ SetTermtype()
   return FULLUPDATE;
 }
 
-SetCharset()
+int 
+SetCharset (void)
 {
   CSET charset;
   int rc;
@@ -529,8 +538,8 @@ SetCharset()
   return FULLUPDATE;
 }
 
-UserDisplay(acct)
-ACCOUNT *acct;
+int 
+UserDisplay (ACCOUNT *acct)
 {
   prints("[%s]\n", acct->userid);
   prints("User name:       %s\n", acct->username);
@@ -545,9 +554,11 @@ ACCOUNT *acct;
   if (*acct->address)  prints("Address:         %s\n", acct->address);
   if (*acct->email)    prints("E-mail address:  %s\n", acct->email);
   clrtobot();
-}        
+  return 0;
+}
 
-ShowOwnInfo()
+int 
+ShowOwnInfo (void)
 {
   ACCOUNT acct;
   int rc;
@@ -561,7 +572,8 @@ ShowOwnInfo()
   return PARTUPDATE;
 }
 
-AddAccount()
+int 
+AddAccount (void)
 {
   int rc;
   ACCOUNT acct;
@@ -588,7 +600,8 @@ AddAccount()
   return PARTUPDATE;
 }
 
-DeleteAccount()
+int 
+DeleteAccount (void)
 {
   NAME namebuf;
   int rc;
@@ -619,7 +632,8 @@ DeleteAccount()
   return FULLUPDATE;
 }
 
-SetUserData()
+int 
+SetUserData (void)
 {
   NAME userid;
   ACCOUNT acct, nr;
@@ -658,7 +672,7 @@ SetUserData()
     getdata(y+1, 0, genbuf, nr.userid, sizeof(nr.userid), DOECHO, 0);
     if (!nr.userid[0])
       break;
-    if (grok = CheckUserid(nr.userid)) {
+    if ((grok = CheckUserid(nr.userid))) {
       move(y+2, 0);
       prints("Invalid or taken userid. Try again.\n");
     }
@@ -670,7 +684,7 @@ SetUserData()
     getdata(y+1,0,"New Password: ",nr.passwd,sizeof(nr.passwd),NOECHO, 0);
     if (!nr.passwd[0]) break;
     getdata(y+2,0,"Confirm Pass: ", passcfm,sizeof(passcfm),NOECHO, 0);
-    if (grok = strcmp(nr.passwd, passcfm)) {
+    if ((grok = strcmp(nr.passwd, passcfm))) {
       move(y+3, 0);
       prints("Passwords don't match. Try again.\n");
     }
@@ -724,9 +738,8 @@ char *global_permstrs[32];
 #define PERMMENUNUMBER(c) ((c)>='A'?((c)-'A'):((c)-'1'+26))
 #define PBITSET(m,i)       (((m)>>(i))&1)
 
-LONG
-SetPermMenu(pbits)
-LONG pbits;
+LONG 
+SetPermMenu (LONG pbits)
 {
   int i, rc, done = 0;
   char buf[80], choice[2];
@@ -775,7 +788,8 @@ LONG pbits;
   return (pbits);
 }
 
-SetUserPerms()
+int 
+SetUserPerms (void)
 {
   int rc;
   NAME namebuf;
@@ -814,7 +828,8 @@ SetUserPerms()
   return FULLUPDATE;
 }
 
-QueryEdit()
+int 
+QueryEdit (void)
 {
   PATH planfile;
   char ans[7];
@@ -845,16 +860,16 @@ QueryEdit()
 }
 
 /*ARGSUSED*/
-_query_if_logged_in(indx, urec, loggedin)
-int indx;
-USEREC *urec;
-int *loggedin;
+int
+_query_if_logged_in(int indx, USEREC *urec, void *loggedinarg)
 {
+  int *loggedin = (int *)loggedinarg;
   (*loggedin)++;
   return ENUM_QUIT;
 }
 
-Query()
+int 
+Query (void)
 {
   NAME namebuf;
   ACCOUNT acct;
@@ -903,7 +918,7 @@ Query()
     /* For now, just print one screen of the plan. In the future maybe
        prompt to ask if they want to page thru the whole plan, since
        we have it. */
-    if (fp = fopen(planfile, "r")) {
+    if ((fp = fopen(planfile, "r"))) {
       prints("Plan:\n");
       for (i=firstsig; i<t_lines; i++) {
 	if (!fgets(buf, sizeof buf, fp)) break;
@@ -916,7 +931,8 @@ Query()
   return PARTUPDATE;
 }
 
-ToggleCloak()
+int 
+ToggleCloak (void)
 {
   int rc;
   move(3,0);
@@ -930,7 +946,8 @@ ToggleCloak()
   return PARTUPDATE;
 }
 
-ToggleExempt()
+int 
+ToggleExempt (void)
 {
   int rc;
   NAME namebuf;
@@ -963,7 +980,8 @@ ToggleExempt()
   return FULLUPDATE;
 }
 
-SetPager()
+int 
+SetPager (void)
 {
   int rc;
   char ans[3], buf[40];
@@ -1000,7 +1018,8 @@ SetPager()
   return PARTUPDATE;
 }
 
-SignatureEdit()
+int 
+SignatureEdit (void)
 {
   PATH sigfile;
   char ans[7];
@@ -1031,7 +1050,8 @@ SignatureEdit()
   return FULLUPDATE;
 }
 
-MenuConfig()
+int 
+MenuConfig (void)
 {
   int rc;
   SHORT expert = (myinfo.flags & FLG_EXPERT);

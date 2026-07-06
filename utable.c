@@ -23,6 +23,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
+#include <stdlib.h>
 
 #ifdef NO_FLOCK
 # define LOCK(fd)   lockf(fd, F_LOCK, 0)
@@ -54,8 +56,8 @@ extern SERVERDATA server;
 
 #define UTABLEFILE       "etc/.utable"
 
-f_utable_attach(numusers)
-int numusers;
+int 
+f_utable_attach (int numusers)
 {
   int fd;
   if (utable_sz != 0) return S_ATTACHED;
@@ -69,14 +71,14 @@ int numusers;
 }
 
 /*ARGSUSED*/
-f_utable_detach(destroy)
-int destroy;
+int 
+f_utable_detach (int destroy)
 {
   return S_OK;
 }
 
-f_utable_lock_record(precnum)
-int *precnum;
+int 
+f_utable_lock_record (int *precnum)
 {
   int i, fd, rc, maxrec;
   USERDATA data;
@@ -125,8 +127,8 @@ int *precnum;
   return S_FULL;
 }
 
-f_utable_free_record(recnum)
-int recnum;
+int 
+f_utable_free_record (int recnum)
 {
   int fd;
   struct stat stbuf;
@@ -156,9 +158,8 @@ int recnum;
   return S_OK;
 }
 
-f_utable_get_record(recnum, buf)
-int recnum;
-USERDATA *buf;
+int 
+f_utable_get_record (int recnum, USERDATA *buf)
 {
   int fd;
   struct stat stbuf;
@@ -186,9 +187,8 @@ USERDATA *buf;
   return S_OK;
 }
 
-f_utable_set_record(recnum, buf)
-int recnum;
-USERDATA *buf;
+int 
+f_utable_set_record (int recnum, USERDATA *buf)
 {
   int fd;
   struct stat stbuf;
@@ -223,9 +223,8 @@ USERDATA *buf;
   return S_OK;
 }
 
-f_utable_find_record(pid, buf)
-LONG pid;
-USERDATA *buf;
+int 
+f_utable_find_record (LONG pid, USERDATA *buf)
 {
   int fd;
   USERDATA data;
@@ -245,11 +244,8 @@ USERDATA *buf;
   return S_NOSUCHUSER;
 }
 
-f_utable_enumerate(startrec, userid, func, arg)
-int startrec;
-char *userid;
-int (*func)();
-void *arg;
+int
+f_utable_enumerate(int startrec, char *userid, int (*func)(int, USERDATA *, void *), void *arg)
 {
   int fd, indx, retval = 0;
   USERDATA udata;
@@ -286,7 +282,8 @@ USERDATA *utableptr = NULL;
 
 int utable_shmid = -1;
 
-_read_shmkey()
+int 
+_read_shmkey (void)
 {
   FILE *fp;
   char buf[8];
@@ -298,8 +295,8 @@ _read_shmkey()
   return key;      
 }  
 
-_write_shmkey(key)
-int key;
+int 
+_write_shmkey (int key)
 {
   FILE *fp;
   char buf[8];
@@ -311,8 +308,8 @@ int key;
   return (fp == NULL ? -1 : 0);
 }  
 
-utable_attach(numusers)
-int numusers;
+int
+utable_attach(int numusers)
 {
   int key, i, created = 0;
   int memsize;
@@ -365,8 +362,8 @@ int numusers;
   return S_OK;
 }
 
-utable_detach(destroy)
-int destroy;
+int
+utable_detach(int destroy)
 {
   if (!_utable_in_shared_memory) 
     return f_utable_detach(destroy);
@@ -389,8 +386,8 @@ int destroy;
   return S_OK;
 }
 
-utable_lock_record(precnum)
-int *precnum;
+int
+utable_lock_record(int *precnum)
 {
   int i, maxrec;
   if (!_utable_in_shared_memory) 
@@ -410,8 +407,8 @@ int *precnum;
   return S_FULL;
 }
             
-utable_free_record(recnum)
-int recnum;
+int
+utable_free_record(int recnum)
 {
   if (!_utable_in_shared_memory) 
     return f_utable_free_record(recnum);
@@ -423,9 +420,8 @@ int recnum;
   return S_OK;
 }
 
-utable_get_record(recnum, buf)
-int recnum;
-USERDATA *buf;
+int
+utable_get_record(int recnum, USERDATA *buf)
 {
   if (!_utable_in_shared_memory) 
     return f_utable_get_record(recnum, buf);
@@ -437,9 +433,8 @@ USERDATA *buf;
   return S_OK;
 }
 
-utable_set_record(recnum, buf)
-int recnum;
-USERDATA *buf;
+int
+utable_set_record(int recnum, USERDATA *buf)
 {
   if (!_utable_in_shared_memory) 
     return f_utable_set_record(recnum, buf);
@@ -451,9 +446,8 @@ USERDATA *buf;
   return S_OK;
 }
 
-utable_find_record(pid, buf)
-LONG pid;
-USERDATA *buf;
+int
+utable_find_record(LONG pid, USERDATA *buf)
 {
   int recnum;
   if (!_utable_in_shared_memory) 
@@ -470,11 +464,8 @@ USERDATA *buf;
   return S_NOSUCHUSER;
 }
 
-utable_enumerate(startrec, userid, func, arg)
-int startrec;
-char *userid;
-int (*func)();
-void *arg;
+int
+utable_enumerate(int startrec, char *userid, int (*func)(int, USERDATA *, void *), void *arg)
 {
   int indx, retval = 0;
   USERDATA udata;

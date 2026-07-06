@@ -31,17 +31,16 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # include <malloc.h>
 #endif
 
-NumInList(list)
-NAMELIST list;
+int 
+NumInList (NAMELIST list)
 {
   int num = 0;
   for (;list; list=list->next, num++);
   return num;
 }
 
-ListMaxLen(list, lines)
-NAMELIST list;
-int lines;
+int 
+ListMaxLen (NAMELIST list, int lines)
 {
   int len, max = 0;
   for (;list && lines; list=list->next, lines--) {
@@ -51,8 +50,8 @@ int lines;
   return max;
 }
 
-chkstr(tag,name)
-char *tag, *name;
+int 
+chkstr (char *tag, char *name)
 {
   register char c1, c2;
   while(*tag != '\0') {
@@ -64,10 +63,8 @@ char *tag, *name;
   return 1;
 }
 
-NAMELIST
-GetSubList(tag, list)
-register char *tag ;
-register NAMELIST list;
+NAMELIST 
+GetSubList (register char *tag, register NAMELIST list)
 {
   NAMELIST wlist, wcurr;
   
@@ -91,9 +88,8 @@ register NAMELIST list;
   return wlist ;
 }
 
-void
-ClearSubList(list)
-NAMELIST *list;
+void 
+ClearSubList (NAMELIST *list)
 {
   NAMENODE *trav = *list, *next;
   while (trav) {
@@ -113,11 +109,8 @@ NAMELIST *list;
    is used to find the possible completions.
 */
 
-namecomplete(completefn, complist, prompt, data, datasize)
-int (*completefn)();
-NAMELIST complist;
-char *prompt, *data ;
-int datasize;
+int
+namecomplete(int (*completefn)(NAMELIST *, char *), NAMELIST complist, char *prompt, char *data, int datasize)
 {
   char *temp;
   int ch ;
@@ -250,16 +243,15 @@ int datasize;
   if(!fgets(data,datasize,stdin))
     generic_abort() ;
   data[datasize] = '\0';
-  if(temp = strchr(data,'\n'))
+  if((temp = strchr(data,'\n')))
     *temp = '\0' ;
   return 0 ;
 }
 
 #if 0
 
-namecomplete(list, prompt, data)
-NAMELIST list;
-char *prompt, *data ;
+int 
+namecomplete (NAMELIST list, char *prompt, char *data)
 {
   NAMENODE dummynode;
   char *temp;
@@ -397,7 +389,7 @@ char *prompt, *data ;
   if(!fgets(data,WORDSIZE,stdin))
     generic_abort() ;
   data[WORDSIZE] = '\0';
-  if(temp = strchr(data,'\n'))
+  if((temp = strchr(data,'\n')))
     *temp = '\0' ;
   return 0 ;
 }

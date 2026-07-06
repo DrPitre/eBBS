@@ -22,6 +22,10 @@
 */
 
 #include <stdio.h>
+#include <strings.h>
+#include <string.h>
+#include <termcap.h>
+#include <unistd.h>
 #include "osdeps.h"
 #if NO_TERMIO
 # include <sgtty.h>
@@ -33,7 +37,8 @@
 
 struct sgttyb tty_state, tty_new ;
 
-get_tty()
+int 
+get_tty (void)
 {   
     if(gtty(1,&tty_state) < 0) {
         return(-1) ;
@@ -41,31 +46,36 @@ get_tty()
     return 1 ;
 }
   
-init_tty()
+int 
+init_tty (void)
 {
     bcopy(&tty_state, &tty_new, sizeof(tty_new)) ;
     tty_new.sg_flags |= RAW ;
     tty_new.sg_flags &= ~(TANDEM|CBREAK|LCASE|ECHO|CRMOD) ;
     stty(1,&tty_new) ;
+    return 0 ;
 }
 
-reset_tty()
+int 
+reset_tty (void)
 {
     stty(1,&tty_state) ;
+    return 0 ;
 }
-    
-restore_tty()
+
+int 
+restore_tty (void)
 {
     stty(1,&tty_new) ;
+    return 0 ;
 }
 
 #else /* ! NO_TERMIO */
 
-extern char *tgetstr();
-
 struct termio tty_state, tty_new;
 
-get_tty()
+int 
+get_tty (void)
 {
     if(ioctl(1,TCGETA,&tty_state) < 0) {
         return -1;
@@ -80,7 +90,8 @@ get_tty()
     return 0;
 }
 
-init_tty()
+int 
+init_tty (void)
 {
     memcpy(&tty_new, &tty_state, sizeof(tty_new));
     tty_new.c_iflag &= IXANY;
@@ -90,22 +101,27 @@ init_tty()
     tty_new.c_cc[VMIN] = 1;
     tty_new.c_cc[VTIME] = 0;
     if (ioctl(1,TCSETA,&tty_new) == -1) printf("ioctl failed\n");
+    return 0;
 }
 
-reset_tty()
+int 
+reset_tty (void)
 {
     ioctl(1,TCSETA,&tty_state) ;
+    return 0;
 }
 
-restore_tty()
+int 
+restore_tty (void)
 {
     ioctl(1,TCSETA,&tty_new) ;
+    return 0;
 }
 
 #endif /* ! NO_TERMIO */
 
-term_ok(term)
-char *term;
+int 
+term_ok (char *term)
 {
    char tbuf[1024];
    if (tgetent(tbuf, term) != 1) return 0;
@@ -150,8 +166,8 @@ int automargins ;
 char *outp ;
 int  *outlp ;
 
-outcf(ch)
-char ch ;
+int
+outcf (int ch)
 {
     if(*outlp >= TERMCOMSIZE)
         return 0 ;
@@ -160,8 +176,8 @@ char ch ;
     return ch;
 }
 
-term_init(term)
-char *term ;
+int 
+term_init (char *term)
 {
 #ifndef HPUX_TERMCAP
     extern char PC, *UP, *BC ;
@@ -172,7 +188,6 @@ char *term ;
     static char buf[4096] ;
     char sbuf[4096] ;
     char *sbp, *s ;
-    char *tgetstr() ;
 
 #ifndef HPUX_TERMCAP
 # if NO_TERMIO
@@ -263,11 +278,11 @@ char *term ;
     return 0;
 }
 
-do_move(destcol,destline,outc)
-int destcol,destline ;
-int (*outc)() ;
+int
+do_move(int destcol, int destline, int (*outc)(int))
 {
     tputs(tgoto(cm,destcol,destline), 1, outc) ;
+    return 0 ;
 }
 
 

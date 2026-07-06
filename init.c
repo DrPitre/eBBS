@@ -19,6 +19,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "server.h"
+#include <ctype.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #ifndef NO_LOCALE
 # include <locale.h>
 #endif
@@ -46,10 +49,8 @@ char mode_pageable[BBS_MAX_MODE+1];
 #define MODEFILE        "etc/modes"
 
 /*ARGSUSED*/
-_init_modes_func(indx, rec, arg)
-int indx;
-char *rec;
-void *arg;
+int 
+_init_modes_func (int indx, char *rec, void *arg)
 {
   /*
      Modes file format:
@@ -73,7 +74,8 @@ void *arg;
   return S_OK;
 }
 
-init_mode_strs_chars()
+int 
+init_mode_strs_chars (void)
 {
   int count;
   _record_enumerate(MODEFILE, 0, _init_modes_func, NULL);
@@ -81,10 +83,8 @@ init_mode_strs_chars()
 }
 
 /*ARGSUSED*/
-_init_strs_func(indx, rec, arg)
-int indx;
-char *rec;
-void *arg;
+int 
+_init_strs_func (int indx, char *rec, void *arg)
 {
   int len;
   strip_trailing_space(rec);
@@ -94,7 +94,8 @@ void *arg;
   return (indx == PERMBIT_MAX ? ENUM_QUIT : S_OK);
 }
 
-init_perm_strs()
+int 
+init_perm_strs (void)
 {
   int count;
   count = _record_enumerate(PERMSTRFILE, 0, _init_strs_func, NULL);
@@ -106,10 +107,8 @@ init_perm_strs()
 }
 
 /*ARGSUSED*/
-_init_perms_func(indx, rec, arg)
-int indx;
-char *rec;
-void *arg;
+int 
+_init_perms_func (int indx, char *rec, void *arg)
 {
   char *str, *equals;
   int i;
@@ -117,7 +116,7 @@ void *arg;
   strip_trailing_space(rec);
   if ((equals = strchr(rec, '=')) != NULL) {
     equals++;
-    while (str = strtok(equals, " \t,")) {
+    while ((str = strtok(equals, " \t,"))) {
       if (!strcmp(str, "ALL")) {
         perm_table[indx] = PERM_ALL;
         break;
@@ -132,7 +131,8 @@ void *arg;
   return (indx == MAX_CLNTCMDS-1 ? ENUM_QUIT : S_OK);
 }
 
-init_perms()
+int 
+init_perms (void)
 {
   int count;
   count = _record_enumerate(ACCESSFILE, 0, _init_perms_func, NULL);
@@ -143,10 +143,8 @@ init_perms()
 }
 
 /*ARGSUSED*/
-_init_config_func(indx, rec, arg)
-int indx;
-char *rec;
-void *arg;
+int 
+_init_config_func (int indx, char *rec, void *arg)
 {
   char *equals;
   int i;
@@ -208,15 +206,15 @@ void *arg;
   return S_OK;
 }
 
-init_config()
+int 
+init_config (void)
 {
   _record_enumerate(CONFIGFILE, 0, _init_config_func, NULL);
   return S_OK;
 }
 
-_determine_access(mask, access)
-LONG mask;
-char *access;
+int 
+_determine_access (LONG mask, char *access)
 {
   int i;
   memset(access, '0', MAX_CLNTCMDS);
@@ -227,24 +225,23 @@ char *access;
   return S_OK;
 }  
 
-_has_access(cmd)
-LONG cmd;
+int 
+_has_access (LONG cmd)
 {
   if (cmd < 0 || cmd >= MAX_CLNTCMDS) return 0;
   return(user_params.access[cmd] == '1');
 }
 
-_they_have_access(cmd, mask)
-LONG cmd;
-LONG mask;
+int 
+_they_have_access (LONG cmd, LONG mask)
 {
   if (cmd < 0 || cmd >= MAX_CLNTCMDS) return 0;
   if (mask == 0) return(perm_table[cmd] == PERM_ALL);
   else return(perm_table[cmd] & mask);
 }
 
-local_bbs_initialize(initinfo)
-INITINFO *initinfo;
+int 
+local_bbs_initialize (INITINFO *initinfo)
 {
   char loghdr[16];
   char *ident;
@@ -290,7 +287,8 @@ INITINFO *initinfo;
   return S_OK;
 }
 
-local_bbs_disconnect()
+int 
+local_bbs_disconnect (void)
 {
   local_logout();
   close_bbslog();
@@ -300,10 +298,8 @@ local_bbs_disconnect()
 }
   
 /*ARGSUSED*/
-local_bbs_connect(host, port, bbsinfo)
-char *host;
-SHORT port;
-BBSINFO *bbsinfo;
+int 
+local_bbs_connect (char *host, SHORT port, BBSINFO *bbsinfo)
 {
   strcpy(bbsinfo->boardname, server.name);
   bbsinfo->majver = SERVER_VERSION_MAJ;
@@ -317,8 +313,8 @@ BBSINFO *bbsinfo;
   return S_OK;
 }
 
-local_bbs_get_permstrings(ppstrs)
-char **ppstrs;
+int 
+local_bbs_get_permstrings (char **ppstrs)
 {
   int i;
   for (i=0; i<=PERMBIT_MAX; i++) {
@@ -327,8 +323,8 @@ char **ppstrs;
   return S_OK;
 }
 
-local_bbs_get_modestrings(pmstrs)
-char **pmstrs;
+int 
+local_bbs_get_modestrings (char **pmstrs)
 {
   int i;
   for (i=0; i<=BBS_MAX_MODE; i++) {
@@ -337,8 +333,8 @@ char **pmstrs;
   return S_OK;
 }
 
-local_bbs_get_modechars(mchars)
-char *mchars;
+int 
+local_bbs_get_modechars (char *mchars)
 {
   int i;
   for (i=0; i<=BBS_MAX_MODE; i++) {

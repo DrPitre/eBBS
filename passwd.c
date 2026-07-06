@@ -29,9 +29,8 @@ char *crypt __P((char *, char *));
 
 #define REALPASSLEN 8   /* number of significant characters */
 
-is_passwd_good(crypted, clear)
-char *crypted;
-char *clear;
+int 
+is_passwd_good (char *crypted, char *clear)
 {
   char *pw;
   char copy[REALPASSLEN+1];
@@ -41,10 +40,8 @@ char *clear;
   return (!strcmp(pw, crypted));  
 }
 
-void
-encrypt_passwd(crypted, clear)
-char *crypted;
-char *clear;
+void 
+encrypt_passwd (char *crypted, char *clear)
 {
   char copy[REALPASSLEN+1];
   char saltc[2];

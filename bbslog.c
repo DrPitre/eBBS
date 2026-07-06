@@ -1,18 +1,20 @@
 #include "server.h"
+#include <unistd.h>
+#include <stdlib.h>
 
 extern char *optarg;
 extern int optind;
 
-usage(prog)
-char *prog;
+int 
+usage (char *prog)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "Usage: %s [-d bbs-dir] [-h log-header] log-level message\n", prog);
+  return 0;
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int 
+main (int argc, char *argv[])
 {
     char *bbshome = NULL;
     char *logheader = NULL;

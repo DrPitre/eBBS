@@ -23,6 +23,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 extern char *optarg;
 extern int optind;
@@ -37,9 +39,8 @@ struct userclean {
   int for_grins;
 };
 
-do_delete(userid, really)
-char *userid;
-int really;
+int 
+do_delete (char *userid, int really)
 {
   int rc;
   if (really) {
@@ -48,13 +49,13 @@ int really;
     else printf("ERROR %d deleting %s\n", rc, userid);
   }
   else printf("would have DELETED  %s\n", userid);
+  return 0;
 }
 
-user_clean_func(indx, userid, info)
-int indx;
-char *userid;
-struct userclean *info;
+int
+user_clean_func (int indx, char *userid, void *infoarg)
 {
+  struct userclean *info = (struct userclean *)infoarg;
   ACCOUNT acct;
   time_t lastlog;
   
@@ -88,8 +89,8 @@ struct userclean *info;
   return 0;
 }
 
-usage(prog)
-char *prog;
+int 
+usage (char *prog)
 {
   fprintf(stderr,
     "Usage: %s [-a age] [-c] [-d bbsdir] [-n] [-t] userid ...\n", prog);
@@ -99,11 +100,11 @@ char *prog;
     "       -n means only clean accounts that have never been used\n");
   fprintf(stderr,
     "       -t is test mode: only show what would happen\n");
+  return 0;
 }
 
-main(argc, argv)
-int argc;
-char *argv[];
+int 
+main (int argc, char *argv[])
 {
     struct userclean info;
     char *homedir = NULL;

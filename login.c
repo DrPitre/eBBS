@@ -22,6 +22,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -58,14 +59,14 @@ int user_number = -1;
 extern SERVERDATA server;
 extern char mode_pageable[];
 
-SHORT
-my_real_mode()
+SHORT 
+my_real_mode (void)
 {
   return (user_params.u.mode & ~MODE_FLG_NOPAGE);
 }
 
-set_real_mode(mode)
-SHORT mode;
+int 
+set_real_mode (SHORT mode)
 {
   utable_get_record(user_number, &user_params);
   switch (mode) {
@@ -85,50 +86,50 @@ SHORT mode;
   return S_OK;
 }  
 
-my_utable_slot()
+int 
+my_utable_slot (void)
 {
   return user_number;
 }
 
-_has_perms(mask)
-LONG mask;
+int 
+_has_perms (LONG mask)
 {
   return(user_params.perms & mask);
 }
 
-is_me(userid)
-char *userid;
+int 
+is_me (char *userid)
 {
   return(!strcasecmp(userid, user_params.u.userid));
 }
 
 char *
-my_userid()
+my_userid (void)
 {
   return user_params.u.userid;
 }
 
 char *
-my_username()
+my_username (void)
 {
   return user_params.u.username;
 }
 
 char *
-my_host()
+my_host (void)
 {
   return user_params.u.fromhost;
 }
 
-int
-my_flag(flag)
-SHORT flag;
+int 
+my_flag (SHORT flag)
 {
   return (user_params.u.flags & flag);
 }
 
-get_remote_host(host)
-char *host;
+int
+get_remote_host(char *host)
 {
 #ifdef HOST_ENV_VAR
   char *ep = getenv(HOST_ENV_VAR);
@@ -171,11 +172,11 @@ char *host;
   return S_SYSERR;
 }
 
-get_client_host(host)
-char *host;
+int
+get_client_host(char *host)
 {
   struct sockaddr_in sin;
-  int sinsize = sizeof(sin);
+  socklen_t sinsize = sizeof(sin);
   struct hostent *hent;
   if (getsockname(0, (struct sockaddr *)&sin, &sinsize) == -1) {
     strcpy(host, "unknown");
@@ -194,27 +195,26 @@ char *host;
   return S_OK;
 }
 
-_logent_to_data(rec, ldata)
-char *rec;
-LOGONDATA *ldata;
+int
+_logent_to_data(char *rec, void *ldataarg)
 {
+  LOGONDATA *ldata = (LOGONDATA *)ldataarg;
   rec =_extract_quoted(rec, ldata->userid, sizeof(ldata->userid));
   ldata->logonlimit = atoi(rec);
   return S_OK;
 }
 
 /*ARGSUSED*/
-_count_logons(indx, udata, ctr)
-int indx;
-USERDATA *udata;
-int *ctr;
+int
+_count_logons(int indx, USERDATA *udata, void *ctrarg)
 {
+  int *ctr = (int *)ctrarg;
   (*ctr)++;
   return S_OK;
 }
 
-logon_limit_exceeded(userid)
-char *userid;
+int
+logon_limit_exceeded(char *userid)
 {
   LOGONDATA ldata;
   int rc, online = 0;
@@ -227,17 +227,16 @@ char *userid;
 }
 
 /*ARGSUSED*/
-_userid_to_pid(indx, udata, pid)
-int indx;
-USERDATA *udata;
-LONG *pid;
+int
+_userid_to_pid(int indx, USERDATA *udata, void *pidarg)
 {
+  LONG *pid = (LONG *)pidarg;
   *pid = udata->u.pid;
   return ENUM_QUIT;
 }
 
-kick_previous_logon(userid)
-char *userid;
+int
+kick_previous_logon(char *userid)
 {
   LONG pid = 0;
   utable_enumerate(0, userid, _userid_to_pid, &pid);
@@ -247,11 +246,8 @@ char *userid;
   return -1;
 }
 
-local_bbs_login(userid, passwd, kick, loginfo)
-char *userid;
-char *passwd;
-SHORT kick;
-LOGININFO *loginfo;
+int
+local_bbs_login(char *userid, char *passwd, SHORT kick, LOGININFO *loginfo)
 {
   ACCOUNT acct;
   OPENINFO oinfo;
@@ -323,7 +319,8 @@ LOGININFO *loginfo;
   return S_OK;
 }
 
-local_logout()
+int
+local_logout(void)
 {
   if (user_number != -1) {
     utable_get_record(user_number, &user_params);
@@ -343,9 +340,8 @@ local_logout()
   return S_OK;
 }  
 
-local_bbs_newlogin(acct, loginfo)
-ACCOUNT *acct;
-LOGININFO *loginfo;
+int
+local_bbs_newlogin(ACCOUNT *acct, LOGININFO *loginfo)
 {
   int rc;
 
@@ -358,19 +354,20 @@ LOGININFO *loginfo;
   return rc;
 }
 
-local_bbs_check_mail()
+int
+local_bbs_check_mail(void)
 {
   utable_get_record(user_number, &user_params);
   return (user_params.newmailmsgs > 0 ? 1 : 0);  
 }
 
-local_bbs_set_mode(mode)
-SHORT mode;
+int
+local_bbs_set_mode(SHORT mode)
 {
   if (mode > BBS_MAX_MODE) return S_MODEVIOLATION;
   utable_get_record(user_number, &user_params);
   switch (mode) {
-  case 0: 
+  case 0:
     /* Magic value: clear the non-pageable flag */
     user_params.usermode &= ~MODE_FLG_NOPAGE;
     break;
@@ -386,16 +383,16 @@ SHORT mode;
   return S_OK;
 }
 
-local_bbs_set_passwd(passwd)
-char *passwd;
+int
+local_bbs_set_passwd(char *passwd)
 {
   ACCOUNT acct;
   strncpy(acct.passwd, passwd, PASSLEN);
   return (_set_account(user_params.u.userid, &acct, MOD_PASSWD));
 }
 
-local_bbs_set_username(uname)
-char *uname;
+int
+local_bbs_set_username(char *uname)
 {
   ACCOUNT acct;
   utable_get_record(user_number, &user_params);
@@ -405,24 +402,24 @@ char *uname;
   return(_set_account(user_params.u.userid, &acct, MOD_USERNAME));
 }
 
-local_bbs_set_terminal(term)
-char *term;
+int
+local_bbs_set_terminal(char *term)
 {
   ACCOUNT acct;
-  strncpy(acct.terminal, term, UNAMELEN);
+  strncpy(acct.terminal, term, TERMLEN);
   return (_set_account(user_params.u.userid, &acct, MOD_TERMINAL));
 }
 
-local_bbs_set_charset(charset)
-char *charset;
+int
+local_bbs_set_charset(char *charset)
 {
   ACCOUNT acct;
   strncpy(acct.charset, charset, CSETLEN);
   return (_set_account(user_params.u.userid, &acct, MOD_CHARSET));
 }
 
-local_bbs_set_email(email)
-char *email;
+int
+local_bbs_set_email(char *email)
 {
   ACCOUNT acct;
   if (!is_valid_address(email)) return S_BADADDRESS;
@@ -430,36 +427,37 @@ char *email;
   return (_set_account(user_params.u.userid, &acct, MOD_EMAIL));
 }
 
-local_bbs_set_protocol(protoname)
-char *protoname;
+int
+local_bbs_set_protocol(char *protoname)
 {
   ACCOUNT acct;
   strncpy(acct.protocol, protoname, NAMELEN);
   return (_set_account(user_params.u.userid, &acct, MOD_PROTOCOL));
 }
 
-local_bbs_set_editor(editor)
-char *editor;
+int
+local_bbs_set_editor(char *editor)
 {
   ACCOUNT acct;
   strncpy(acct.editor, editor, NAMELEN);
   return (_set_account(user_params.u.userid, &acct, MOD_EDITOR));
 }
 
-local_bbs_owninfo(acct)
-ACCOUNT *acct;
+int
+local_bbs_owninfo(ACCOUNT *acct)
 {
   return (local_bbs_get_userinfo(user_params.u.userid, acct));
 }
 
-local_bbs_toggle_cloak()
+int
+local_bbs_toggle_cloak(void)
 {
   ACCOUNT acct;
   int mode = my_real_mode();
   if (mode == M_TALK || mode == M_PAGE || mode == M_CHAT) {
     /* We don't allow cloak to be toggled in these modes */
     return(S_MODEVIOLATION);
-  }    
+  }
   utable_get_record(user_number, &user_params);
   user_params.u.flags ^= FLG_CLOAK;
   bbslog(2, "CLOAK %s %s\n", user_params.u.flags & FLG_CLOAK ? "ON" : "OFF",
@@ -469,9 +467,8 @@ local_bbs_toggle_cloak()
   return(_set_account(user_params.u.userid, &acct, _TOGGLE_FLAGS));
 }
 
-local_bbs_set_pager(pager, override)
-SHORT pager;
-SHORT override;
+int
+local_bbs_set_pager(SHORT pager, SHORT override)
 {
   ACCOUNT acct;
   acct.flags = 0;
@@ -488,8 +485,8 @@ SHORT override;
   return(_set_account(user_params.u.userid, &acct, _TOGGLE_FLAGS));
 }
 
-local_bbs_set_cliopts(menulevel)
-SHORT menulevel;
+int
+local_bbs_set_cliopts(SHORT menulevel)
 {
   /* At this time, only thing to set here is the local bbs menu style */
   ACCOUNT acct;
@@ -506,8 +503,8 @@ SHORT menulevel;
   return(_set_account(user_params.u.userid, &acct, _TOGGLE_FLAGS));
 }
 
-local_bbs_set_plan(fname)
-char *fname;
+int
+local_bbs_set_plan(char *fname)
 {
   PATH planfile;
   int rc = 0;
@@ -521,8 +518,8 @@ char *fname;
   return (rc == 0 ? S_OK : S_SYSERR);
 }
 
-local_bbs_set_signature(fname)
-char *fname;
+int
+local_bbs_set_signature(char *fname)
 {
   PATH sigfile;
   int rc = 0;
@@ -536,11 +533,10 @@ char *fname;
   return (rc == 0 ? S_OK : S_SYSERR);
 }
 
-_enum_users(indx, info, en)
-int indx;
-USERDATA *info;
-struct enumstruct *en;
+int
+_enum_users(int indx, USERDATA *info, void *enarg)
 {
+  struct enumstruct *en = (struct enumstruct *)enarg;
   int pageok = 1;
   if ((info->u.flags & FLG_CLOAK) && !_has_access(C_SEECLOAK))
     return S_OK;
@@ -560,38 +556,33 @@ struct enumstruct *en;
   return S_OK;
 }
 
-local_bbs_enum_users(chunk, startrec, userid, enumfn, arg)
-SHORT chunk;
-SHORT startrec;
-char *userid;
-int (*enumfn)();
-void *arg;
+int
+local_bbs_enum_users(SHORT chunk, SHORT startrec, char *userid, int (*enumfn)(int, USEREC *, void *), void *arg)
 {
   struct enumstruct en;
-  en.fn = enumfn;
+  en.fn = (int (*)(int, void *, void *))enumfn;
   en.arg = arg;
   utable_enumerate(startrec, userid, _enum_users, &en);
   return S_OK;
 }
 
-_enum_user_names(indx, info, lc)
-int indx;
-USERDATA *info;
-struct listcomplete *lc;
+/*ARGSUSED*/
+int
+_enum_user_names(int indx, USERDATA *info, void *lcarg)
 {
+  struct listcomplete *lc = (struct listcomplete *)lcarg;
   if ((info->u.flags & FLG_CLOAK) && !_has_access(C_SEECLOAK))
     return S_OK;
 
   if (!strncasecmp(info->u.userid, lc->str, strlen(lc->str)))
-    if (!is_in_namelist(*(lc->listp), info->u.userid)) 
+    if (!is_in_namelist(*(lc->listp), info->u.userid))
       add_namelist(lc->listp, info->u.userid, NULL);
 
   return S_OK;
 }
 
-local_bbs_usernames(list, complete)
-NAMELIST *list;
-char *complete;
+int
+local_bbs_usernames(NAMELIST *list, char *complete)
 {
   struct listcomplete lc;
   create_namelist(list);
@@ -601,8 +592,8 @@ char *complete;
   return S_OK;
 }
 
-local_bbs_kick_user(pid)
-LONG pid;
+int
+local_bbs_kick_user(LONG pid)
 {
   USERDATA udata;
   if (utable_find_record(pid, &udata) != S_OK) return S_NOSUCHUSER;
@@ -612,21 +603,21 @@ LONG pid;
   bbslog(2, "KICK %s by %s\n", udata.u.userid, user_params.u.userid);
   if (kill(pid, SIGTERM) == -1) return S_SYSERR;
   else return S_OK;
-}  
+}
 
-_mail_adjust(indx, info, adjval)
-int indx;
-USERDATA *info;
-int *adjval;
+/*ARGSUSED*/
+int
+_mail_adjust(int indx, USERDATA *info, void *adjvalarg)
 {
+  int *adjval = (int *)adjvalarg;
   info->newmailmsgs += *adjval;
   utable_set_record(indx, info);
   return S_OK;
 }
 
-notify_new_mail(userid, adjust)
-char *userid;
-int adjust;
+int
+notify_new_mail(char *userid, int adjust)
 {
   utable_enumerate(0, userid, _mail_adjust, &adjust);
+  return S_OK;
 }
