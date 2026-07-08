@@ -36,8 +36,17 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #else
 # if USES_UTMPX
 #  include <utmpx.h>
+#  ifdef __linux__
+#   include <paths.h>
+#  endif
 #  undef UTMP_FILE
-#  define UTMP_FILE UTMPX_FILE
+#  if defined(UTMPX_FILE)
+#   define UTMP_FILE UTMPX_FILE
+#  elif defined(_PATH_UTMPX)
+#   define UTMP_FILE _PATH_UTMPX
+#  else
+#   define UTMP_FILE "/var/run/utmpx"
+#  endif
 # else
 #  include <utmp.h>
 #  ifndef UTMP_FILE

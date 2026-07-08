@@ -18,14 +18,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-/* 
+/*
    All operating system dependent stuff should go here.
-   If your OS has already been ported to, pick it below and you do not
-   have to edit any other source files.
-   If not you'll have to figure out the right settings and maybe add some.
+   Platform flags are auto-detected from compiler predefined macros below.
+   You can override any flag by defining it before including this header,
+   or by editing these values directly if auto-detection is wrong.
 */
 
-#define LINUX		0 	/* Linux 1.x or 2.x */
+/* Auto-detect platform from compiler predefined macros */
+#ifdef __linux__
+# define LINUX		1 	/* Linux */
+#else
+# define LINUX		0
+#endif
 #define SUNOS           0	/* SunOS version 4.x */
 #define SOLARIS         0       /* SunOS version 5.x */
 #define AIX             0       /* IBM AIX 3.2.x */
@@ -36,9 +41,17 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define ULTRIX          0       /* Ultrix 4.3 (LINUX works too) */
 #define MACHTEN         0       /* MachTen */
 #define HPUX            0       /* HP-UX 9.05 */
-#define FREEBSD         1       /* FreeBSD (also used for macOS/Darwin) */
+#ifdef __FreeBSD__
+# define FREEBSD        1       /* FreeBSD */
+#else
+# define FREEBSD        0
+#endif
 #define IRIX            0       /* SGI IRIX 5.3 */
-#define DARWIN          1       /* macOS / Darwin */
+#ifdef __APPLE__
+# define DARWIN         1       /* macOS / Darwin */
+#else
+# define DARWIN         0
+#endif
 
 /* 
    LONG must be a 4-byte quantity, SHORT must be a 2-byte quantity 
@@ -76,7 +89,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    (you need BSD sgtty.h etc.), define NO_TERMIO.
 */
 
-#if NEXTSTEP || MACHTEN || FREEBSD
+#if NEXTSTEP || MACHTEN || FREEBSD || DARWIN
 # define NO_TERMIO 1
 #endif
 
@@ -148,7 +161,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    Many of them have a utmpx file which does include this field.
 */
 
-#if SOLARIS || UNIXWARE || IRIX || DARWIN
+#if SOLARIS || UNIXWARE || IRIX || DARWIN || LINUX
 # define USES_UTMPX 1
 #endif
 
