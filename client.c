@@ -22,10 +22,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <signal.h>
 #include <time.h>
 #include <stdlib.h>
-#include <unistd.h>
 #ifdef REMOTE_CLIENT
 # include <pwd.h>
-# include <stdlib.h>
 #endif
 
 BBSINFO serverinfo;		/* server's info structure */
@@ -37,7 +35,6 @@ int input_active;               /* for the idle timer */
 #ifdef REMOTE_CLIENT
 char *tmpdir;
 char *shell;
-char *pager;
 char *editor;
 char *termtype;
 char *charset;
@@ -47,14 +44,13 @@ extern int optind;
 #endif
 
 extern int PromptForAccountInfo(ACCOUNT *, int);
-extern int SetPermTable();
+extern void SetPermTable(void);
 extern char *_menudesc_file;
-extern int NDoMenu(char *);
+extern void NDoMenu(char *);
 extern void page_handler __P((int));
 extern char *Ctime __P((time_t *));
 
-int 
-bbperror (LONG code, char *str)
+int bbperror(LONG code, char *str)
 {
   char *errstr;
   if (code > S_MAXERROR) errstr = "unknown error";
@@ -64,8 +60,7 @@ bbperror (LONG code, char *str)
   return 0;
 }
 
-int 
-disconnect (int status)
+void disconnect(int status)
 {
   unlink(c_tempfile);
   bbs_disconnect();
@@ -116,30 +111,26 @@ disconnect (int status)
   exit(status);
 }
 
-int 
-generic_abort (void)		/* general "bail and exit" */
+void generic_abort()		/* general "bail and exit" */
 {
   disconnect(EXIT_CLIERROR);
-  return 0;
 }
 
 #ifdef REMOTE_CLIENT
-int
-bbslib_abort(void)
+void bbslib_abort()
 {
   disconnect(EXIT_LOSTCONN);
-  return 0;
 }
 #endif
 
-void 
-sig_handler (int sig)
+void
+sig_handler(int sig)
 {
   disconnect(sig == SIGALRM ? EXIT_TIMEDOUT : sig);
 }
 
 void
-hit_alarm_clock (int sig)
+hit_alarm_clock()
 {
   if (!input_active) {
     disconnect(EXIT_TIMEDOUT);
@@ -149,27 +140,26 @@ hit_alarm_clock (int sig)
   if (myinfo.idletimeout) alarm((int)myinfo.idletimeout*60);
 }
 
-int 
-set_idle_alarm (void)
+void set_idle_alarm()
 {
   if (myinfo.idletimeout != 0) {
     signal(SIGALRM, hit_alarm_clock);
     alarm((int)myinfo.idletimeout*60);
   }
-  return 0;
 }
 
-int 
-cancel_idle_alarm (void)
+void cancel_idle_alarm()
 {
   alarm(0);
-  return 0;
 }
 
-void 
-InitializeTerminal (void)
+void
+InitializeTerminal()
 {
-  TERM t;
+  char *t = getenv("TERM");
+  if (term_init(t) == 0) {
+    return;
+  }
 #ifdef REMOTE_CLIENT
   if (termtype == NULL) {
 #else /* !REMOTE_CLIENT */
@@ -182,9 +172,9 @@ InitializeTerminal (void)
     return;
   }
 #ifdef REMOTE_CLIENT
-  strncpy(t, termtype, TERMLEN);
+  t = termtype;
 #else
-  strncpy(t, acct.terminal, TERMLEN);
+  t = acct.terminal;
 #endif
   if (term_init(t) == -1) {
     prints("I don't know about '%s' terminals!\n", t);
@@ -221,8 +211,7 @@ InitializeCharset()
   }
 }
 
-int
-Login(SHORT newok)
+int Login(SHORT newok)
 {
   ACCOUNT acct;
   int rc;
@@ -271,18 +260,16 @@ login_switch:
 }
 
 #ifdef REMOTE_CLIENT
-void
-usage(char *prog)
+void usage(char *prog)
 {
   fprintf(stderr, 
   "Usage: %s [-c charset] [-d tmpdir] [-e editor] [-m menu-file]\n", prog);
   fprintf(stderr,
-  "       [-p pager] [-s shell] [-t terminal-type] [bbs-server] [port]\n");
+  "       [-s shell] [-t terminal-type] [bbs-server] [port]\n");
 }
 #endif
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   int rc;
   PATH fname;
@@ -309,9 +296,6 @@ main(int argc, char *argv[])
     case 'm':
       _menudesc_file = optarg;
       break;
-    case 'p':
-      pager = optarg;      
-      break;
     case 's':
       shell = optarg;
       break;
@@ -331,12 +315,9 @@ main(int argc, char *argv[])
   if (shell == NULL) shell = "/bin/sh";
 
   if (tmpdir == NULL) tmpdir = getenv("TMPDIR");
-  if (tmpdir == NULL) tmpdir = "/tmp";
-
-  if (pager == NULL) pager = getenv("BBS_PAGER");
-  if (editor == NULL) editor = getenv("BBS_EDITOR");
+  if (editor == NULL) editor = getenv("EDITOR");
   if (termtype == NULL) termtype = getenv("TERM");
-  if (_menudesc_file == NULL) _menudesc_file = ".ebbsmenu";
+  if (_menudesc_file == NULL) _menudesc_file = "/etc/ebbsmenu";
 
   if ((pw = getpwuid(getuid())) != NULL)
     bbshomedir = pw->pw_dir;
@@ -369,7 +350,8 @@ main(int argc, char *argv[])
   }
     
 #ifdef REMOTE_CLIENT
-  sprintf(c_tempfile, "%s/bbs%05d", tmpdir, getpid());
+  if (tmpdir) sprintf(c_tempfile, "%s/bbs%05d", tmpdir, getpid());
+  else sprintf(c_tempfile, "bbs%05d", getpid());
 #else
   sprintf(c_tempfile, "tmp/bbl%05d", getpid());
 #endif
@@ -445,7 +427,7 @@ main(int argc, char *argv[])
       strncpy(host, myinfo.fromhost, sizeof(host)-1);
       More(fname, 0);
       sprintf(buf, "Last login %s from %s [RETURN]: ",
-              Ctime((time_t *)&myinfo.lastlogin), host);
+              Ctime(&myinfo.lastlogin), host);
       getdata(t_lines-1, 0, buf, &ans, 1, NOECHO, 0);
     }
   }

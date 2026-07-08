@@ -27,7 +27,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # define LOCK(fp)   lockf(fileno(fp), F_LOCK, 0)
 # define UNLOCK(fp) lockf(fileno(fp), F_ULOCK, 0)
 #else
-# include <sys/file.h> 
+# include <sys/file.h>
 # define LOCK(fp)   flock(fileno(fp), LOCK_EX)
 # define UNLOCK(fp) flock(fileno(fp), LOCK_UN)
 #endif
@@ -36,10 +36,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #define BBS_MAX_RECORD 4096
 
-int
-_match_first(char *rec, void *fldarg)
+int _match_first(char *rec, char *fld)
 {
-  char *fld = (char *)fldarg;
   register char c1, c2;
   while (*fld) {
     c1 = *fld++;
@@ -49,10 +47,8 @@ _match_first(char *rec, void *fldarg)
   return ((*rec == ' ' || *rec == ':') ? S_RECEXISTS : S_OK);
 }
 
-int
-_match_full(char *rec, void *fldarg)
+int _match_full(char *rec, char *fld)
 {
-  char *fld = (char *)fldarg;
   register char c1, c2;
   while (*fld) {
     c1 = *fld++;
@@ -63,15 +59,14 @@ _match_full(char *rec, void *fldarg)
 }
 
 /*ARGSUSED*/
-int
-_change_name(char *newrec, char *oldrec, char *newname)
+int _change_name(char *newrec, char *oldrec, char *newname)
 {
   sprintf(newrec, "%s\n", newname);
   return S_OK;
 }
 
 char *
-_append_quoted (char *rec, char *str)
+_append_quoted(char *rec, char *str)
 {
   while (*str) {
     if (*str == ':' || *str == '\\') *rec++ = '\\';
@@ -83,7 +78,7 @@ _append_quoted (char *rec, char *str)
 }
 
 char *
-_extract_quoted (char *rec, char *str, int len)
+_extract_quoted(char *rec, char *str, int len)
 {
   len--;    /* leave space for terminating null */
   while (*rec != ':' && *rec != '\n' && *rec != '\0') {
@@ -99,8 +94,8 @@ _extract_quoted (char *rec, char *str, int len)
   return rec;
 }
 
-int
-_record_add(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf)(char *, void *), void *farg)
+int _record_add(char *fname, int (*testf)(char *, void *), void *targ,
+                int (*formatf)(char *, void *), void *farg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -112,8 +107,8 @@ _record_add(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf
     }
   }
 
-  LOCK(fp);        
-  
+  LOCK(fp);
+
   if (testf) {
     while (fgets(rec, sizeof rec, fp)) {
       if (IS_COMMENT(rec)) continue;
@@ -138,10 +133,10 @@ _record_add(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf
   UNLOCK(fp);
   fclose(fp);
   return S_OK;
-}      
+}
 
-int
-_do_record_delete(char *fname, int (*testf)(char *, void *), void *targ, int single)
+int _do_record_delete(char *fname, int (*testf)(char *, void *), void *targ,
+                      int single)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -152,8 +147,8 @@ _do_record_delete(char *fname, int (*testf)(char *, void *), void *targ, int sin
     return S_NOSUCHREC;
   }
 
-  LOCK(fp);        
-  
+  LOCK(fp);
+
   while (fgets(rec, sizeof rec, fp)) {
     len = strlen(rec);
 
@@ -166,34 +161,32 @@ _do_record_delete(char *fname, int (*testf)(char *, void *), void *targ, int sin
         fseek(fp, -(delsz+len), SEEK_CUR);
         fputs(rec, fp);
         fseek(fp, delsz, SEEK_CUR);
-      }        
+      }
     }
     else {
       delsz += len;
     }
-  }                        
+  }
 
   if (savesz == 0) unlink(fname);
   else if (delsz) ftruncate(fileno(fp), savesz);
   UNLOCK(fp);
   fclose(fp);
   return (delsz ? S_OK : S_NOSUCHREC);
-}      
+}
 
-int
-_record_delete(char *fname, int (*testf)(char *, void *), void *targ)
+int _record_delete(char *fname, int (*testf)(char *, void *), void *targ)
 {
   return (_do_record_delete(fname, testf, targ, 1));
 }
 
-int
-_record_delete_many(char *fname, int (*testf)(char *, void *), void *targ)
+int _record_delete_many(char *fname, int (*testf)(char *, void *), void *targ)
 {
   return (_do_record_delete(fname, testf, targ, 0));
 }
 
-int
-_record_find(char *fname, int (*testf)(char *, void *), void *targ, int (*formatf)(char *, void *), void *farg)
+int _record_find(char *fname, int (*testf)(char *, void *), void *targ,
+                 int (*formatf)(char *, void *), void *farg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -216,10 +209,10 @@ _record_find(char *fname, int (*testf)(char *, void *), void *targ, int (*format
 
   fclose(fp);
   return S_NOSUCHREC;
-}      
+}
 
-int
-_record_enumerate(char *fname, int start, int (*enumf)(int, char *, void *), void *earg)
+int _record_enumerate(char *fname, int start, int (*enumf)(int, char *, void *),
+                      void *earg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -239,12 +232,12 @@ _record_enumerate(char *fname, int start, int (*enumf)(int, char *, void *), voi
 
   fclose(fp);
   return indx;
-}      
+}
 
 /* This is one UGLY function, but it's as neat as I can make it! */
 
-int
-_record_replace(char *fname, int (*testf)(char *, void *), void *targ, int (*replf)(char *, char *, void *), void *rarg)
+int _record_replace(char *fname, int (*testf)(char *, void *), void *targ,
+                    int (*replf)(char *, char *, void *), void *rarg)
 {
   FILE *fp;
   char rec[BBS_MAX_RECORD];
@@ -257,8 +250,8 @@ _record_replace(char *fname, int (*testf)(char *, void *), void *targ, int (*rep
     return S_NOSUCHREC;
   }
 
-  LOCK(fp);        
-  
+  LOCK(fp);
+
   while (rc == S_OK && fgets(rec, sizeof rec, fp)) {
     len = strlen(rec);
 
@@ -278,11 +271,11 @@ _record_replace(char *fname, int (*testf)(char *, void *), void *targ, int (*rep
   if (rc != S_OK) {
     UNLOCK(fp);
     fclose(fp);
-    return rc;  
+    return rc;
   }
   newlen = strlen(newrec);
   difflen = len - newlen;
-  
+
   if (difflen) chunk = fread(rec, 1, sizeof rec, fp);
   else chunk = 0;
 
@@ -301,16 +294,15 @@ _record_replace(char *fname, int (*testf)(char *, void *), void *targ, int (*rep
         chunk = fread(rec, 1, sizeof rec, fp);
       }
       else chunk = len = 0;
-      
+
       fseek(fp, -(chunk+len), SEEK_CUR);
-      fwrite(scratch, 1, newlen, fp);                
+      fwrite(scratch, 1, newlen, fp);
       savesz += newlen;
-    }      
+    }
     ftruncate(fileno(fp), savesz);
   }
 
   UNLOCK(fp);
   fclose(fp);
   return S_OK;
-}      
-
+}

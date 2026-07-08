@@ -20,13 +20,11 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "server.h"
 #include <time.h>
-#include <unistd.h>
 
 #define HEADER_TAG_SIZE 11
 #define HEADERSIZE      128  /* must be greater than HEADER_TAG_SIZE+ADDRLEN */
 
-int 
-read_headers (char *fname, HEADER *hdr)
+int read_headers(char *fname, HEADER *hdr)
 {
   char buf[HEADERSIZE];
   FILE *fp;
@@ -65,10 +63,8 @@ struct writetostruct {
   char *buf;
 };
 
-int
-write_to_header (int indx, char *userid, void *infoarg)
+int write_to_header(int indx, char *userid, struct writetostruct *info)
 {
-  struct writetostruct *info = (struct writetostruct *)infoarg;
   int i;
   int len = strlen(info->buf);
   int needed = strlen(userid)+3;
@@ -85,8 +81,7 @@ write_to_header (int indx, char *userid, void *infoarg)
 
 /* What a mess. I should use stdio. */
 
-int 
-write_mail_headers (int fd, HEADER *hdr, char *username, NAMELIST list)
+int write_mail_headers(int fd, HEADER *hdr, char *username, NAMELIST list)
 {
   char fmt[40];
   char hdrline[HEADERSIZE];
@@ -120,11 +115,10 @@ write_mail_headers (int fd, HEADER *hdr, char *username, NAMELIST list)
     write(fd, hdrline, strlen(hdrline));
   }
   write(fd, "\n", 1);
-  return S_OK;
+  return 0;
 }
 
-int 
-write_post_headers (int fd, HEADER *hdr, char *username, char *bname)
+int write_post_headers(int fd, HEADER *hdr, char *username, char *bname)
 {
   char fmt[40];
   char hdrline[HEADERSIZE];
@@ -152,20 +146,19 @@ write_post_headers (int fd, HEADER *hdr, char *username, char *bname)
   write(fd, hdrline, strlen(hdrline));
 
   write(fd, "\n", 1);
-  return S_OK;
+  return 0;
 }
 
 /* This one is used by the client side */
 
-int 
-parse_to_list (NAMELIST *list, char *fname, char *myname)
+int parse_to_list(NAMELIST *list, char *fname, char *myname)
 {
   FILE *fp;
   char header[HEADERSIZE];
   char *ptr, *id;
   int gotit = 0;
 
-  if ((fp = fopen(fname, "r")) == NULL) return 0;
+  if ((fp = fopen(fname, "r")) == NULL) return(0);
   while (fgets(header, sizeof header, fp) && header[0] != '\n') {
     if (!gotit && strncmp(header, "To: ", 4)) continue;
     if (gotit && strncmp(header, "    ", 4)) break;

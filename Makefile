@@ -25,18 +25,29 @@ RANLIB=echo Not using ranlib:
 # special include paths?
 INCLUDES=
 
+# termcap or ncurses?
+LIBTERMCAP=-lncurses
+
 # special libs?
+# Redhat Linux 5.x+ needs -lcrypt
+# FreeBSD needs -ldescrypt -lcompat
+# Very old FreeBSD needs -lcrypt -lcompat -lipc
 # Solaris needs -lsocket -lnsl -L/usr/ccs/lib
 # MachTen needs -lcompat
 # Unixware needs -lsocket -lnsl (and maybe -L/usr/ucblib -lucb)
-# FreeBSD needs -lcrypt -lcompat -lipc
+# macOS: crypt is in libSystem, no -lcrypt needed
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
 LIBS=
+else
+LIBS=-lcrypt
+endif
 
 # flags for the compiler
 # NeXT wants -pipe -s -O4 -arch m68040; FreeBSD wants -O2 -m486 -pipe
 # might want to try -DMENU_STANDOUT too if you're a dialup bbs
 # might want -DEXTRA_CHAT_STUFF or -DNO_IGNORE_CHATOPS, see docs
-CCFLAGS=-O -DCOLOR -std=gnu89
+CCFLAGS=-O -DCOLOR -Wno-implicit-function-declaration -Wno-implicit-int
 
 # flags for the linker -- NeXT wants -s -O4; FreeBSD wants -s
 LDFLAGS=-O
@@ -120,8 +131,8 @@ bbsmaild: bbsmaild.o libbbs.a
 # BBS daemon make (not quite finished)
 ############################################################################
 
-#bbsd:
-#	cd server; make CC="$(CC)" CFLAGS="$(CFLAGS)" LD="$(LD)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" bbsd
+bbsd:
+	cd server; make CC="$(CC)" CFLAGS="$(CFLAGS)" LD="$(LD)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" bbsd
 
 ############################################################################
 # Chat daemon make
@@ -140,8 +151,8 @@ chatd: chatserv.o chatconf.o libbbs.a
 # BBS client make (not quite finished)
 ############################################################################
 
-#bbs:
-#	cd client; make CC="$(CC)" CFLAGS="$(CFLAGS)" LD="$(LD)" LDFLAGS="$(LDFLAGS)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" RANLIB="$(RANLIB)" LIBS="$(LIBS)" bbs
+bbs:
+	cd client; make CC="$(CC)" CFLAGS="$(CFLAGS)" LD="$(LD)" LDFLAGS="$(LDFLAGS)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" RANLIB="$(RANLIB)" LIBS="$(LIBS)" LIBTERMCAP="$(LIBTERMCAP)" bbs
 
 ############################################################################
 # Local client make
@@ -188,7 +199,7 @@ y.tab.c: gram.y
 	$(YACC) $(YFLAGS) gram.y
 
 lbbs: $(LOBJS) $(LLIBS)
-	$(LD) $(LDFLAGS) -o lbbs $(LOBJS) $(LLIBS) $(LIBS) -ltermcap
+	$(LD) $(LDFLAGS) -o lbbs $(LOBJS) $(LLIBS) $(LIBS) $(LIBTERMCAP)
 
 srcdist:
 	rm -f ebbssrc.tar ebbssrc.tar.gz 
@@ -213,7 +224,7 @@ install: all
 	./Install.sh $(INSTALLDIR)
 
 clean:
-	rm -f *.o pbbs/*.o *~ pbbs/*~ config/*~ *# y.output
+	rm -f *.o pbbs/*.o client/*.o *~ pbbs/*~ config/*~ *# y.output
 
 clobber: clean
 	rm -f $(BINS) libbbs.a pbbs/libpbbs.a

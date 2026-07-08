@@ -4,8 +4,7 @@
 char *default_env = "TERM=dumb,SHELL=/bin/false" ;
 
 
-char *
-ExpandString (char *s)
+char *ExpandString(char *s)
 {
     static char buf[1024] ;
     char *sr = buf ;
@@ -85,8 +84,7 @@ ExpandString (char *s)
 }
 
 
-int 
-parse_environment (char *s)
+void parse_environment(char *s)
 {
     char buf[4096] ;
     char *p1, *p2, *p3 ;
@@ -105,16 +103,13 @@ parse_environment (char *s)
         if(p3== NULL)
           break ;
         p1 = p3 + 1 ;
-
+        
     }
-    return 0 ;
 }
 
 
-int 
-parse_default (void)
+void parse_default(void)
 {
     parse_environment(default_env) ;
-    return 0 ;
 }
 

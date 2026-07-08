@@ -24,20 +24,17 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 char permtab[MAX_CLNTCMDS];
 char *currentboard = currboard;
 
-int 
-DoReadHelp (NREADMENU *m, int openflags)
+void DoReadHelp(NREADMENU *m, int openflags)
 {
   NREADMENUITEM *mi;
   for (mi = m->commlist; mi != NULL; mi = mi->next) {
     if (HasReadMenuPerm(mi->boardprivs, openflags) &&
-        HasPerm(mi->mainprivs) && mi->help[0] != '\0')
+        HasPerm(mi->mainprivs) && mi->help[0] != '\0') 
       prints("%s\n", mi->help);
   }
-  return 0;
 }
 
-int 
-MovementReadHelp (void)
+void MovementReadHelp(void)
 {
   standout();
   prints("Movement Commands\n");
@@ -48,19 +45,15 @@ MovementReadHelp (void)
   prints("N               Next Page\n");
   prints("## <cr>         Goto Message ##\n");
   prints("$               Goto Last Message\n");
-  return 0;
 }
 
-int 
-MiscReadHelp (void)
+void MiscReadHelp(void)
 {
   prints("CTRL-L          Redraw Screen\n");
   prints("e               EXIT Read Menu\n");
-  return 0;
 }
 
-int 
-ReadMenuHelp (NREADMENU *menu, int flags)
+int ReadMenuHelp(NREADMENU *menu, int flags)
 {
   clear();
   standout();
@@ -80,28 +73,24 @@ ReadMenuHelp (NREADMENU *menu, int flags)
 }
 
 /*ARGSUSED*/
-int 
-MailReadHelp (void *hptr, LONG curr, LONG num, LONG flags)
+int MailReadHelp(void *hptr, LONG curr, LONG num, LONG flags)
 {
   return (ReadMenuHelp(MailReadMenu, flags));
 }
 
 /*ARGSUSED*/
-int 
-MainReadHelp (void *hptr, LONG curr, LONG num, LONG flags)
+int MainReadHelp(void *hptr, LONG curr, LONG num, LONG flags)
 {
   return (ReadMenuHelp(PostReadMenu, flags));
 }
 
 /*ARGSUSED*/
-int 
-FileReadHelp (void *hptr, LONG curr, LONG num, LONG flags)
+int FileReadHelp(void *hptr, LONG curr, LONG num, LONG flags)
 {
   return (ReadMenuHelp(FileReadMenu, flags));
 }
 
-int 
-NotImpl (void)
+NotImpl()
 {
   clear();
   prints("This function is not yet implemented.\n");
@@ -109,29 +98,24 @@ NotImpl (void)
   return FULLUPDATE;
 }
 
-int 
-EndMenu (void)
+EndMenu()
 {
   return EXITMENU;
 }
 
-int 
-SetPermTable (void)
+void SetPermTable(void)
 {
   memcpy(permtab, myinfo.access, MAX_CLNTCMDS);
-  return 0;
 }
 
-int 
-HasPerm (int perm)
+int HasPerm(int perm)
 {
   if (perm == 0) return 1;
   else if (perm < 0 || perm >= MAX_CLNTCMDS) return 0;
   else return (permtab[perm]-'0');
 }
 
-int 
-HasReadMenuPerm (int perm, int flags)
+int HasReadMenuPerm(int perm, int flags)
 {
   if (perm == 0) return 1;
   else return (perm & flags);
@@ -141,8 +125,8 @@ HasReadMenuPerm (int perm, int flags)
 #define KEY_ESCAPE (1)
 #define KEY_VTKEYS (2)
 
-int 
-MenuGetch (void)
+int
+MenuGetch()
 {
   char c;
   int keymode = KEY_NORMAL;

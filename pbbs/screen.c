@@ -22,14 +22,17 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
+#include <string.h>
 #include "osdeps.h"
 #include "io.h"
 #include "screen.h"
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <termcap.h>
+#if WANTS_VARARGS_H
+# include <varargs.h>
+#else
+# include <stdarg.h>
+int prints(char *fmt, ...);
+#endif
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -37,7 +40,6 @@
 #endif
 
 extern char clearbuf[] ;
-extern int ochar(int c);
 extern char cleolbuf[] ;
 extern char scrollrev[] ;
 extern char strtstandout[] ;
@@ -76,8 +78,7 @@ int coloring = 0;
 
 struct screenline *big_picture = NULL ;
 
-int 
-init_screen (int slns, int scols)
+void init_screen(int slns, int scols)
 {
     scr_lns = slns ;
     scr_cols = MIN(scols,LINELEN) ;
@@ -92,49 +93,45 @@ init_screen (int slns, int scols)
     docls = 1 ;
     downfrom = 0 ;
     roll = 0 ;
-    return 0;
 }
 
-int 
-initscr (void)
+void initscr(void)
 {
     if(!dumb_term && !big_picture)
       init_screen(t_lines,t_columns) ;
-    return 0;
 }
 
-int 
-fullscreen (void)
+int fullscreen(void)
 {
     return (scrint);
 }
 
 int tc_col, tc_line ;
 
-int 
-rel_move (int was_col, int was_ln, int new_col, int new_ln)
+void rel_move(int was_col, int was_ln, int new_col, int new_ln)
 {
+    extern void ochar(unsigned char);
 #ifndef HPUX_TERMCAP
     extern char *BC ;
 #endif
 
     if(new_ln >= t_lines  || new_col >= t_columns)
-      return 0 ;
+      return ;
     tc_col = new_col ;
     tc_line = new_ln ;
     if((new_col == 0) && (new_ln == was_ln+1)) {
         ochar('\n') ;
         if(was_col != 0)
           ochar('\r') ;
-        return 0 ;
+        return ;
     }
     if((new_col == 0) && (new_ln == was_ln)) {
         if(was_col != 0)
           ochar('\r') ;
-        return 0 ;
+        return ;
     }
     if(was_col == new_col && was_ln == new_ln)
-      return 0 ;
+      return ;
     if(new_col == was_col - 1 && new_ln == was_ln) {
 #ifndef HPUX_TERMCAP
         if(BC)
@@ -142,22 +139,20 @@ rel_move (int was_col, int was_ln, int new_col, int new_ln)
         else
 #endif
           ochar(CTRL('H'));
-        return 0 ;
+        return ;
     }
 
     do_move(new_col,new_ln,ochar) ;
-    return 0 ;
 }
 
 
-int 
-standoutput (char *buf, int ds, int de, int sso, int eso)
+void standoutput(char *buf, int ds, int de, int sso, int eso)
 {
     int st_start, st_end ;
 
     if(eso <= ds || sso >= de) {
         output(buf+ds,de-ds) ;
-        return 0 ;
+        return ;
     }
     st_start = MAX(sso,ds) ;
     st_end = MIN(eso,de) ;
@@ -168,20 +163,18 @@ standoutput (char *buf, int ds, int de, int sso, int eso)
     o_standdown() ;
     if(de > eso)
       output(buf+eso,de-eso) ;
-    return 0 ;
 }
 
 #if COLOR
 /* Yeah, it's ripped off from the above function */
-int 
-coloroutput (char *buf, int ds, int de, int sco, int eco, int colnum)
+void coloroutput(char *buf, int ds, int de, int sco, int eco, int colnum)
 {
     int st_start, st_end ;
     char strtcolbuf[80];
 
     if(eco <= ds || sco >= de) {
         output(buf+ds,de-ds) ;
-        return 0 ;
+        return ;
     }
     st_start = MAX(sco,ds) ;
     st_end = MIN(eco,de) ;
@@ -194,18 +187,16 @@ coloroutput (char *buf, int ds, int de, int sco, int eco, int colnum)
     output(endcolor, endcolorlen);
     if(de > eco)
       output(buf+eco,de-eco) ;
-    return 0 ;
 }
 #endif
 
-int 
-redoscr (void)
+void redoscr(void)
 {
     register int i,j ;
     register struct screenline *bp = big_picture ;
 
     if(dumb_term)
-      return 0 ;
+      return ;
     o_clear() ;
     tc_col = 0 ;
     tc_line = 0 ;
@@ -222,7 +213,7 @@ redoscr (void)
           coloroutput((char *)bp[j].data,0,bp[j].len,bp[j].sco,bp[j].eco,bp[j].color) ;
 #endif
         else
-          output((char *)bp[j].data,bp[j].len) ;
+          output(bp[j].data,bp[j].len) ;
         tc_col+=bp[j].len ;
         if(tc_col >= t_columns) {
             if(!automargins) {
@@ -240,29 +231,28 @@ redoscr (void)
     docls = 0 ;
     scrollcnt = 0 ;
     oflush() ;
-    return 0 ;
 }
 
-int 
-refresh (void)
+void refresh(void)
 {
     register int i,j ;
     register struct screenline *bp = big_picture ;
     extern int automargins ;
     extern int scrollrevlen ;
+    extern void ochar(unsigned char) ;
 
     if(dumb_term)
-      return 0 ;
+      return ;
     if(num_in_buf() != 0)
-      return 0 ;
+      return ;
     if((docls) || (abs(scrollcnt) >= (scr_lns-3)) ) {
         redoscr() ;
-        return 0 ;
+        return ;
     }
     if(scrollcnt < 0) {
         if(!scrollrevlen) {
             redoscr() ;
-            return 0 ;
+            return ;
         }
         rel_move(tc_col,tc_line,0,0) ;
         while(scrollcnt < 0) {
@@ -293,7 +283,7 @@ refresh (void)
                           bp[j].sco,bp[j].eco,bp[j].color) ;
 #endif
             else
-              output((char *)&bp[j].data[bp[j].smod],bp[j].emod-bp[j].smod+1) ;
+              output(&bp[j].data[bp[j].smod],bp[j].emod-bp[j].smod+1) ;
             tc_col = bp[j].emod+1 ;
             if(tc_col >= t_columns) {
                 if(automargins) {
@@ -313,16 +303,15 @@ refresh (void)
     }
     rel_move(tc_col,tc_line,cur_col,cur_ln) ;
     oflush() ;
-    return 0 ;
 }
 
-int
-clear()
+void clear(void)
 {
     register int i ;
+    extern void move(int, int) ;
 
     if(dumb_term)
-      return 0 ;
+      return ;
     roll = 0 ;
     docls = 1 ;
     downfrom = 0 ;
@@ -332,20 +321,18 @@ clear()
         big_picture[i].oldlen = 0 ;
     }
     move(0,0) ;
-    return 0 ;
 }
 
-int 
-clrtoeol (void)
+void clrtoeol(void)
 {
     register struct screenline *slp ;
 
     if(dumb_term)
-      return 0 ;
+      return ;
     standing = 0 ;
 #if COLOR
     coloring = 0 ;
-#endif
+#endif    
     slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
     if(cur_col <= slp->sso)
       slp->mode &= ~STANDOUT ;
@@ -359,58 +346,49 @@ clrtoeol (void)
           slp->data[i] = ' ' ;
     }
     slp->len = cur_col ;
-    return 0 ;
 }
 
-int 
-clrtobot (void)
+void clrtobot(void)
 {
     register int i ;
 
     if(dumb_term)
-      return 0 ;
+      return ;
     for(i=cur_ln; i<scr_lns;i++) {
         big_picture[(i+roll)%scr_lns].mode = 0 ;
         big_picture[(i+roll)%scr_lns].len = 0 ;
         if(big_picture[(i+roll)%scr_lns].oldlen > 0)
           big_picture[(i+roll)%scr_lns].oldlen = 255 ;
     }
-    return 0 ;
 }
 
-int 
-clrstandout (void)
+void clrstandout(void)
 {
     register int i ;
     if(dumb_term)
-      return 0 ;
+      return ;
     for(i=0;i<scr_lns;i++)
       big_picture[i].mode &= ~(STANDOUT) ;
-    return 0 ;
 }
 
 static char nullstr[] = "(null)" ;
 
-int 
-move (int y, int x)
+void move(int y, int x)
 {
     cur_col = x ;
     cur_ln = y ;
-    return 0 ;
 }
 
-int 
-getyx (int *y, int *x)
+void getyx(int *y, int *x)
 {
     *y = cur_ln ;
     *x = cur_col ;
-    return 0 ;
 }
 
-int 
-outc (register unsigned char c)
+void outc(unsigned char c)
 {
     register struct screenline *slp ;
+    extern void ochar(unsigned char) ;
 
 #ifdef DO_ISTRIP
     c &= 0x7f ;
@@ -420,13 +398,13 @@ outc (register unsigned char c)
             if(c == '\n') {
                 ochar('\r') ;
                 ochar('\n') ;
-                return 0 ;
+                return ;
             }
             ochar('*') ;
-            return 0 ;
+            return ;
         }
         ochar(c) ;
-        return 0 ;
+        return ;
     }
     slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
     if(!isprint(c)) {  /* deal with non-printables */
@@ -450,7 +428,7 @@ outc (register unsigned char c)
             cur_col = 0 ;
             if(cur_ln < scr_lns)
               cur_ln++ ;
-            return 0 ;
+            return ;
         }
 #if COLOR
         if (c != '\033') /* let ESC through for ansi color */
@@ -490,68 +468,56 @@ outc (register unsigned char c)
         if(cur_ln < scr_lns)
           cur_ln++ ;
     }
-    return 0 ;
 }
 
-int 
-outs (register char *str)
+void outs(register char *str)
 {
 	while(*str != '\0')
 		outc(*str++) ;
-    return 0 ;
 }
 
-int 
-outns (register char *str, register int n)
+void outns(register char *str, register int n)
 {
     for(;n>0;n--)
       outc(*str++) ;
-    return 0 ;
 }
 
 
-int 
-addch (int ch)
+void addch(int ch)
 {
     outc(ch) ;
-    return 0 ;
 }
 
-int 
-scroll (void)
+void scroll(void)
 {
     if(dumb_term) {
         prints("\n") ;
-        return 0 ;
+        return ;
     }
     scrollcnt++ ;
     roll = (roll+1)%scr_lns ;  /* subtract one from roll mod scr_lns*/
     move(scr_lns-1,0) ;
     clrtoeol() ;
-    return 0 ;
 }
 
-int 
-rscroll (void)
+void rscroll(void)
 {
     if(dumb_term) {
         prints("\n\n") ;
-        return 0 ;
+        return ;
     }
     scrollcnt-- ;
     roll = (roll+(scr_lns-1))%scr_lns ;
     move(0,0) ;
     clrtoeol() ;
-    return 0 ;
 }
 
-int 
-standout (void)
+void standout(void)
 {
     register struct screenline *slp ;
 
     if(dumb_term  || !strtstandoutlen)
-      return 0 ;
+      return ;
     if(!standing) {
         slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
         standing = 1 ;
@@ -559,32 +525,28 @@ standout (void)
         slp->eso = cur_col ;
         slp->mode |= STANDOUT ;
     }
-    return 0 ;
 }
 
-int 
-standend (void)
+void standend(void)
 {
     register struct screenline *slp ;
 
     if(dumb_term || !strtstandoutlen)
-      return 0 ;
+      return ;
     if(standing) {
         slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
         standing= 0 ;
         slp->eso = MAX(slp->eso,cur_col) ;
     }
-    return 0 ;
 }
 
 #if COLOR
-int 
-colorstart (int colnum)
+void colorstart(int colnum)
 {
     register struct screenline *slp ;
 
     if(dumb_term || !strtcolorlen)
-      return 0 ;
+      return ;
     if(!coloring) {
         slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
         coloring = 1 ;
@@ -593,35 +555,45 @@ colorstart (int colnum)
         slp->color = colnum ;
         slp->mode |= COLORON ;
     }
-    return 0 ;
 }
 
-int 
-colorend (void)
+void colorend(void)
 {
     register struct screenline *slp ;
 
     if(dumb_term || !strtcolorlen)
-      return 0 ;
+      return ;
     if(coloring) {
         slp = &big_picture[((cur_ln+roll)%scr_lns)] ;
         coloring = 0 ;
         slp->eco = MAX(slp->eco,cur_col) ;
     }
-    return 0 ;
 }
 #endif
 
 int dec[] = {1000000000,100000000,10000000,1000000,100000,10000,1000,100,10,1} ;
-
-int
-prints(char *fmt, ...)
+ 
+#if WANTS_VARARGS_H
+int prints(va_alist)
+va_dcl
+#else
+int prints(char *fmt, ...)
+#endif
 {
 	va_list ap ;
+#if WANTS_VARARGS_H
+	register char *fmt ;
+#endif
     char *bp ;
 	register int i, count, hd, indx ;
 
-	va_start(ap, fmt) ;
+#if WANTS_VARARGS_H
+	va_start(ap) ;
+	fmt = va_arg(ap, char *) ;
+#else
+	va_start(ap, fmt);
+#endif
+
 	while(*fmt != '\0')
       {
           if(*fmt == '%')
@@ -722,12 +694,11 @@ prints(char *fmt, ...)
                 fmt++ ;
                 continue ;
             }
-
+          
           outc(*fmt) ;
           fmt++ ;
       }
   endprint:
-
-	return 0 ;
+    
+	return(0) ;
 }
-

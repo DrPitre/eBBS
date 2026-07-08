@@ -18,19 +18,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-/*
+/* 
    All operating system dependent stuff should go here.
-   Platform flags are auto-detected from compiler predefined macros below.
-   You can override any flag by defining it before including this header,
-   or by editing these values directly if auto-detection is wrong.
+   If your OS has already been ported to, pick it below and you do not
+   have to edit any other source files.
+   If not you'll have to figure out the right settings and maybe add some.
 */
 
-/* Auto-detect platform from compiler predefined macros */
-#ifdef __linux__
-# define LINUX		1 	/* Linux */
-#else
-# define LINUX		0
-#endif
+#define LINUX           1       /* Linux w/glibc6 */
+#define LINUX_GLIBC5	0 	/* Linux w/glibc5  */
 #define SUNOS           0	/* SunOS version 4.x */
 #define SOLARIS         0       /* SunOS version 5.x */
 #define AIX             0       /* IBM AIX 3.2.x */
@@ -41,24 +37,15 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define ULTRIX          0       /* Ultrix 4.3 (LINUX works too) */
 #define MACHTEN         0       /* MachTen */
 #define HPUX            0       /* HP-UX 9.05 */
-#ifdef __FreeBSD__
-# define FREEBSD        1       /* FreeBSD */
-#else
-# define FREEBSD        0
-#endif
+#define FREEBSD         0       /* FreeBSD */
 #define IRIX            0       /* SGI IRIX 5.3 */
-#ifdef __APPLE__
-# define DARWIN         1       /* macOS / Darwin */
-#else
-# define DARWIN         0
-#endif
 
 /* 
    LONG must be a 4-byte quantity, SHORT must be a 2-byte quantity 
 */
 
-typedef unsigned LONG;		/* 32-bit unsigned */
-typedef unsigned short SHORT;	/* 16-bit unsigned */
+typedef uint32_t LONG;		/* 32-bit unsigned */
+typedef uint16_t SHORT;		/* 16-bit unsigned */
 
 /*
    If your C library does not have setlocale(3) define NO_LOCALE.
@@ -80,7 +67,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    If your C library does not have vfork(2) define NO_VFORK.
 */
 
-#if AIX || IRIX || AUX || DARWIN
+#if AIX || IRIX || AUX
 # define NO_VFORK 1
 #endif
 
@@ -89,7 +76,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    (you need BSD sgtty.h etc.), define NO_TERMIO.
 */
 
-#if NEXTSTEP || MACHTEN || FREEBSD || DARWIN
+#if NEXTSTEP || MACHTEN || FREEBSD
 # define NO_TERMIO 1
 #endif
 
@@ -133,8 +120,17 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    Are you missing the <malloc.h> header file?
 */
 
-#if MACHTEN || FREEBSD || DARWIN
+#if MACHTEN || FREEBSD || defined(__APPLE__)
 # define LACKS_MALLOC_H 1
+#endif
+
+#ifdef __APPLE__
+# ifndef OLCUC
+#  define OLCUC 0
+# endif
+# ifndef XCASE
+#  define XCASE 0
+# endif
 #endif
 
 /* 
@@ -161,7 +157,7 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    Many of them have a utmpx file which does include this field.
 */
 
-#if SOLARIS || UNIXWARE || IRIX || DARWIN || LINUX
+#if SOLARIS || UNIXWARE || IRIX
 # define USES_UTMPX 1
 #endif
 
@@ -179,12 +175,12 @@ typedef unsigned short SHORT;	/* 16-bit unsigned */
    If crypt(3) is declared in unistd.h, good. If it's missing use this.
 */
 
-#if SUNOS || SOLARIS || AIX || AUX || IRIX
+#if SUNOS || SOLARIS || AIX || AUX || IRIX || LINUX
 # define NEEDS_CRYPT_DECLARED 1
 #endif
 
 /* Function prototyping */
 
 #ifndef __P
-# define __P(x) x
+# define __P(x) ()
 #endif

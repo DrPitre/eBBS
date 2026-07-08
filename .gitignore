@@ -11,3 +11,9 @@ delacct
 bbslog
 bbfinger
 bbsmaild
+log
+tmp/
+config/.shmkey
+config/.utable
+config/.chatpid
+config/.chatport

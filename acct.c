@@ -27,17 +27,14 @@ extern SERVERDATA server;
 
 #define LASTLOGIN      "lastlogin"
 
-int 
-get_lastlog_file (char *userid, char *buf)
+void get_lastlog_file(char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, LASTLOGIN);
-  return S_OK;
 }
 
-int 
-get_lastlog_time (char *userid, LONG *tbuf)
+void get_lastlog_time(char *userid, time_t *tbuf)
 {
   PATH lastlog;
   struct stat stbuf;
@@ -46,11 +43,9 @@ get_lastlog_time (char *userid, LONG *tbuf)
   if (stat(lastlog, &stbuf) == 0) {
     *tbuf = (LONG)stbuf.st_mtime;
   }
-  return S_OK;
 }
 
-int 
-get_lastlog_host (char *userid, char *host)
+void get_lastlog_host(char *userid, char *host)
 {
   PATH lastlog;
   FILE *fp;
@@ -60,11 +55,9 @@ get_lastlog_host (char *userid, char *host)
     fgets(host, HOSTLEN, fp);
     fclose(fp);
   }
-  return S_OK;
-}
+}    
 
-int 
-set_lastlog (char *userid, char *host)
+void set_lastlog(char *userid, char *host)
 {
   PATH lastlog;
   FILE *fp;
@@ -73,8 +66,7 @@ set_lastlog (char *userid, char *host)
     fputs(host, fp);
     fclose(fp);
   }
-  return S_OK;
-}
+}    
 
 /* 
    Profile. Bunch of optional information stored one per line, 
@@ -99,43 +91,34 @@ struct profile_data {
   char *data;
 };
 
-int 
-get_profile_file (char *userid, char *buf)
+void get_profile_file(char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, PROFILE);
-  return S_OK;
 }
 
-int
-_match_profile_key (char *rec, void *keyarg)
+int _match_profile_key(char *rec, char *key)
 {
-  char *key = (char *)keyarg;
   if (!strncmp(rec, key, 4) && rec[4] == '=') return S_RECEXISTS;
   return S_OK;
 }
 
-int
-_profile_upd (char *newrec, char *oldrec, void *dataarg)
+int _profile_upd(char *newrec, char *oldrec, char *data)
 {
-  char *data = (char *)dataarg;
   strncpy(newrec, oldrec, 5);
   strcpy(newrec+5, data);
   strcat(newrec, "\n");
   return S_OK;
 }
 
-int
-_profile_format (char *rec, void *pdarg)
+int _profile_format(char *rec, struct profile_data *pd)
 {
-  struct profile_data *pd = (struct profile_data *)pdarg;
   sprintf(rec, "%s=%s\n", pd->key, pd->data);
   return S_OK;
 }
 
-int 
-set_profile_data (char *userid, char *key, char *data)
+int set_profile_data(char *userid, char *key, char *data)
 {
   int rc;
   PATH profile;
@@ -161,10 +144,8 @@ set_profile_data (char *userid, char *key, char *data)
 }
 
 /*ARGSUSED*/
-int
-_profile_fill (int indx, char *rec, void *acctarg)
+int _profile_fill(int indx, char *rec, ACCOUNT *acct)
 {
-  ACCOUNT *acct = (ACCOUNT *)acctarg;
   strip_trailing_space(rec);
   if (rec[4] != '=') return S_OK;
   rec[4] = '\0';
@@ -185,8 +166,7 @@ _profile_fill (int indx, char *rec, void *acctarg)
   return S_OK;
 }
 
-int 
-enum_profile_data (char *userid, ACCOUNT *acct)
+int enum_profile_data(char *userid, ACCOUNT *acct)
 {
   PATH profile;
   get_profile_file(userid, profile);
@@ -199,17 +179,14 @@ enum_profile_data (char *userid, ACCOUNT *acct)
   return S_OK;
 }
 
-int
-_fill_profile_name (char *rec, void *bufarg)
+int _fill_profile_name(char *rec, char *buf)
 {
-  char *buf = (char *)bufarg;
   strip_trailing_space(rec);
   strncpy(buf, rec+5, RNAMELEN);
   return S_OK;
 }
 
-int 
-lookup_profile_name (char *userid, char *namebuf)
+int lookup_profile_name(char *userid, char *namebuf)
 {
   PATH profile;
   int rc;
@@ -230,10 +207,8 @@ lookup_profile_name (char *userid, char *namebuf)
 #define PF_USERNAME_OFFSET    (PF_FLAGS_OFFSET+5)
 #define PF_END_OF_RECORD      (PF_USERNAME_OFFSET+UNAMELEN+1)
 
-int
-format_passent (char *rec, void *acctarg)
+int format_passent(char *rec, ACCOUNT *acct)
 {
-  ACCOUNT *acct = (ACCOUNT *)acctarg;
   memset(rec, ' ', PF_USERNAME_OFFSET+UNAMELEN);
   memcpy(rec+PF_USERID_OFFSET, acct->userid, strlen(acct->userid));
   *(rec+PF_PASSWD_OFFSET-1) = ':';
@@ -248,10 +223,8 @@ format_passent (char *rec, void *acctarg)
   return S_OK;
 }
 
-int
-passent_to_account (char *rec, void *acctarg)
+int passent_to_account(char *rec, ACCOUNT *acct)
 {
-  ACCOUNT *acct = (ACCOUNT *)acctarg;
   acct->userid[NAMELEN] = '\0';
   acct->passwd[PASSLEN] = '\0';
   acct->username[UNAMELEN] = '\0';
@@ -266,29 +239,25 @@ passent_to_account (char *rec, void *acctarg)
   return S_OK;
 }
 
-int 
-hide_priv_acct_fields (ACCOUNT *acct)
+void hide_priv_acct_fields(ACCOUNT *acct)
 {
   int myself = is_me(acct->userid);
   if (!myself) memset(acct->passwd, '\0', PASSLEN);
   if (!_has_perms(PERM_SYSOP)) acct->perms = 0;
   if (!_has_access(C_SEEALLAINFO)) {
-    if (myself) acct->flags &= ~FLG_EXEMPT;   /* hide only this flag */
+    if (myself) acct->flags &= ~FLG_EXEMPT;   /* hide only this flag */    
     else acct->flags = 0;                     /* hide all from others */
   }
-  return S_OK;
-}
+}  
 
-int 
-_lookup_account (char *userid, ACCOUNT *acct)
+int _lookup_account(char *userid, ACCOUNT *acct)
 {
   int rc;
   rc = _record_find(PASSFILE, _match_first, userid, passent_to_account, acct);
   return rc;
 }
 
-int 
-local_bbs_add_account (ACCOUNT *newacct, SHORT is_encrypted)
+int local_bbs_add_account(ACCOUNT *newacct, SHORT is_encrypted)
 {
 
   int rc;
@@ -329,7 +298,7 @@ local_bbs_add_account (ACCOUNT *newacct, SHORT is_encrypted)
     set_profile_data(acct.userid, PROFILE_NAME, acct.realname);
   if (acct.address[0]) 
     set_profile_data(acct.userid, PROFILE_ADDR, acct.address);
-  if (acct.email[0]) 
+  if (acct.email[0] && is_valid_address(acct.email)) 
     set_profile_data(acct.userid, PROFILE_MAIL, acct.email);
   if (acct.protocol[0]) 
     set_profile_data(acct.userid, PROFILE_PROT, acct.protocol);
@@ -344,8 +313,7 @@ local_bbs_add_account (ACCOUNT *newacct, SHORT is_encrypted)
   return S_OK;
 }
 
-int 
-local_bbs_delete_account (char *userid)
+int local_bbs_delete_account(char *userid)
 {
   int rc;
   ACCOUNT acct;
@@ -373,15 +341,13 @@ local_bbs_delete_account (char *userid)
 }
 
 /*ARGSUSED*/
-int
-update_passent (char *newrec, char *oldrec, void *acct)
+int update_passent(char *newrec, char *oldrec, ACCOUNT *acct)
 {
-  format_passent(newrec, acct);
+  format_passent(newrec, acct);    
   return S_OK;
 }
 
-int 
-_set_account (char *userid, ACCOUNT *newacct, SHORT flags)
+int _set_account(char *userid, ACCOUNT *newacct, SHORT flags)
 {
   int rc;
   ACCOUNT acct;
@@ -440,7 +406,7 @@ _set_account (char *userid, ACCOUNT *newacct, SHORT flags)
     set_profile_data(acct.userid, PROFILE_NAME, newacct->realname);
   if (flags & MOD_ADDRESS) 
     set_profile_data(acct.userid, PROFILE_ADDR, newacct->address);
-  if (flags & MOD_EMAIL) 
+  if ((flags & MOD_EMAIL) && is_valid_address(newacct->email)) 
     set_profile_data(acct.userid, PROFILE_MAIL, newacct->email);
   if (flags & MOD_PROTOCOL) 
     set_profile_data(acct.userid, PROFILE_PROT, newacct->protocol);
@@ -450,8 +416,7 @@ _set_account (char *userid, ACCOUNT *newacct, SHORT flags)
   return S_OK;
 }
 
-int 
-local_bbs_modify_account (char *userid, ACCOUNT *acct, SHORT flags)
+int local_bbs_modify_account(char *userid, ACCOUNT *acct, SHORT flags)
 {
   /* Clear the internal-only flags */
   flags &= MOD_ACCOUNT_MASK;
@@ -464,8 +429,7 @@ local_bbs_modify_account (char *userid, ACCOUNT *acct, SHORT flags)
   return(_set_account(userid, acct, flags));
 }
 
-int 
-local_bbs_modify_perms (char *userid, LONG perms)
+int local_bbs_modify_perms(char *userid, LONG perms)
 {
   ACCOUNT acct;
   acct.perms = perms;
@@ -473,8 +437,7 @@ local_bbs_modify_perms (char *userid, LONG perms)
   return (_set_account(userid, &acct, _MOD_PERMS));
 }
 
-int 
-local_bbs_toggle_exempt (char *userid)
+int local_bbs_toggle_exempt(char *userid)
 {
   ACCOUNT acct;
   acct.flags = FLG_EXEMPT;
@@ -482,8 +445,7 @@ local_bbs_toggle_exempt (char *userid)
   return (_set_account(userid, &acct, _TOGGLE_FLAGS));
 }
 
-int 
-local_bbs_query (char *userid, ACCOUNT *acct)
+int local_bbs_query(char *userid, ACCOUNT *acct)
 {
   int rc;
   memset(acct, 0, sizeof(*acct));
@@ -496,15 +458,20 @@ local_bbs_query (char *userid, ACCOUNT *acct)
   }
   hide_priv_acct_fields(acct);
   get_lastlog_time(acct->userid, &acct->lastlogin);
-  get_lastlog_host(acct->userid, acct->fromhost);
+  if (!server.hidehostname || _has_access(C_SEEALLAINFO) || 
+      is_me(acct->userid)) {
+    get_lastlog_host(acct->userid, acct->fromhost);
+  }
+  else {
+    strcpy(acct->fromhost, "localhost");
+  }
   if (server.queryreal && _has_access(C_SEEREALNAME)) {
     lookup_profile_name(acct->userid, acct->realname);    
   }
   return S_OK;
 }
 
-int 
-local_bbs_get_userinfo (char *userid, ACCOUNT *acct)
+int local_bbs_get_userinfo(char *userid, ACCOUNT *acct)
 {
   int rc;
   memset(acct, 0, sizeof(*acct));
@@ -512,39 +479,40 @@ local_bbs_get_userinfo (char *userid, ACCOUNT *acct)
   if (rc != S_OK) return S_NOSUCHUSER;
   hide_priv_acct_fields(acct);
   get_lastlog_time(acct->userid, &acct->lastlogin);
-  get_lastlog_host(acct->userid, acct->fromhost);
+  if (!server.hidehostname || _has_access(C_SEEALLAINFO) || 
+      is_me(acct->userid)) {
+    get_lastlog_host(acct->userid, acct->fromhost);
+  }
+  else {
+    strcpy(acct->fromhost, "localhost");
+  }
   enum_profile_data(acct->userid, acct);
   return S_OK;
 }  
 
-int
-_enum_accounts(int indx, char *rec, void *enarg)
+int _enum_accounts(int indx, char *rec, struct enumstruct *en)
 {
-  struct enumstruct *en = (struct enumstruct *)enarg;
   ACCOUNT acct;
   memset(&acct, 0, sizeof acct);
   passent_to_account(rec, &acct);
   get_lastlog_time(acct.userid, &acct.lastlogin);
   hide_priv_acct_fields(&acct);
-  if (en->fn(indx, &acct, en->arg) == ENUM_QUIT) return ENUM_QUIT;
+  if (((int (*)(int, ACCOUNT *, void *))en->fn)(indx, &acct, en->arg) == ENUM_QUIT) return ENUM_QUIT;
   return S_OK;
 }
 
 /*ARGSUSED*/
-int
-local_bbs_enum_accounts(SHORT chunk, SHORT startrec, int (*enumfn)(int, ACCOUNT *, void *), void *arg)
+int local_bbs_enum_accounts(SHORT chunk, SHORT startrec, int (*enumfn)(), void *arg)
 {
   struct enumstruct en;
-  en.fn = (int (*)(int, void *, void *))enumfn;
+  en.fn = enumfn;
   en.arg = arg;
   _record_enumerate(PASSFILE, startrec, _enum_accounts, &en);
   return S_OK;
 }
 
-int
-_fill_acctnames (int indx, char *rec, void *lcarg)
+int _fill_acctnames(int indx, char *rec, struct listcomplete *lc)
 {
-  struct listcomplete *lc = (struct listcomplete *)lcarg;
   NAME userid;
   memcpy(userid, rec+PF_USERID_OFFSET, NAMELEN);
   userid[NAMELEN] = '\0';
@@ -555,8 +523,7 @@ _fill_acctnames (int indx, char *rec, void *lcarg)
   return S_OK;
 }
 
-int 
-local_bbs_acctnames (NAMELIST *list, char *complete)
+int local_bbs_acctnames(NAMELIST *list, char *complete)
 {
   struct listcomplete lc;
   create_namelist(list);
@@ -574,8 +541,7 @@ local_bbs_acctnames (NAMELIST *list, char *complete)
 
 extern int fix_readbit_entry();
 
-int 
-_acct_enum_fix_readbits (char *oldbname, char *newbname)
+int _acct_enum_fix_readbits(char *oldbname, char *newbname)
 {
   struct namechange ncs;
   ncs.oldname = oldbname;
@@ -593,8 +559,7 @@ _acct_enum_fix_readbits (char *oldbname, char *newbname)
 
 extern int fix_override_entry();
 
-int 
-_acct_enum_fix_overrides (char *oldname, char *newname)
+int _acct_enum_fix_overrides(char *oldname, char *newname)
 {
   struct namechange ncs;
   ncs.oldname = oldname;

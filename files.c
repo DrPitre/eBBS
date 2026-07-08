@@ -21,7 +21,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "server.h"
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -56,7 +55,7 @@ extern SERVERDATA server;    /* for append_sig */
 typedef struct _FILENODE {
   SHORT fileid;
   SHORT flags;
-  LONG size;
+  off_t size;
   time_t mtime;
   struct _FILENODE *next;
 } FILENODE;
@@ -77,8 +76,8 @@ struct _openboard {
 #define UNMARKED_FILE_MODE  0660
 #define MARKED_FILE_MODE    0640
 
-int 
-free_filelist (FILELIST *list)
+void
+free_filelist(FILELIST *list)
 {
   FILENODE *curr = *list, *next;
   while (curr != NULL) {
@@ -87,11 +86,10 @@ free_filelist (FILELIST *list)
     curr = next;
   }
   *list = NULL;
-  return S_OK;
 }
 
-int 
-insert_filelist (FILELIST *list, FILENODE *node)
+int
+insert_filelist(FILELIST *list, FILENODE *node)
 {
   FILENODE *curr = *list, *prev = NULL;
   
@@ -187,7 +185,7 @@ _enum_files(char *dir, int (*fn)(int, char *, char *, int, void *), void *arg)
 }
 
 FILENODE *
-_bcache_find (SHORT fileid)
+_bcache_find(SHORT fileid)
 {
   FILENODE *trav = _currbrd.bcache;
   while (trav) {
@@ -198,13 +196,12 @@ _bcache_find (SHORT fileid)
 }    
 
 int
-_msg_tally(FILENODE *node, void *newinfoarg)
+_msg_tally(FILENODE *node, void *newinfo)
 {
-  READINFO *newinfo = (READINFO *)newinfoarg;
   _currbrd.oi.totalmsgs++;
-  if ((node->mtime < (time_t)_currbrd.ri.stamp) &&
+  if ((node->mtime < _currbrd.ri.stamp) &&
       test_readbit(&_currbrd.ri, node->fileid)) {
-    set_readbit(newinfo, node->fileid);
+    set_readbit((READINFO *)newinfo, node->fileid);
     node->flags &= ~FILE_UNREAD;
   }
   else _currbrd.oi.newmsgs++;
@@ -212,15 +209,15 @@ _msg_tally(FILENODE *node, void *newinfoarg)
 }      
 
 /*ARGSUSED*/
-int 
-_file_tally (int indx, char *dir, char *fname, int isdir, void *arg)
+int
+_file_tally(int indx, char *dir, char *fname, int isdir, void *arg)
 {
   _currbrd.oi.totalmsgs++;
   return S_OK;
 }      
 
-int 
-_sync_currbrd (void)
+int
+_sync_currbrd(void)
 {
   struct stat stbuf;
   READINFO newinfo;
@@ -238,7 +235,7 @@ _sync_currbrd (void)
   case BOARD_POST:
     clear_all_readbits(&newinfo);
     build_filelist(_currbrd.bdir, &_currbrd.bcache, _msg_tally, &newinfo);
-    time((time_t *)&newinfo.stamp);
+    time(&newinfo.stamp);
     memcpy(&_currbrd.ri, &newinfo, sizeof(_currbrd.ri));
     break;
   case BOARD_FILE:
@@ -251,8 +248,8 @@ _sync_currbrd (void)
   return S_OK;
 }
   
-int 
-get_filelist_ids (char *dir, READINFO *rinfo)
+int
+get_filelist_ids(char *dir, READINFO *rinfo)
 {
   DIR *dp;
   struct dirent *dent;
@@ -274,8 +271,8 @@ get_filelist_ids (char *dir, READINFO *rinfo)
   return S_OK;
 }
 
-int 
-fileid_to_fname (char *dir, SHORT fileid, char *fname)
+void
+fileid_to_fname(char *dir, SHORT fileid, char *fname)
 {
   char *eodir;
   strcpy(fname, dir);
@@ -283,7 +280,6 @@ fileid_to_fname (char *dir, SHORT fileid, char *fname)
   eodir = fname+strlen(fname);
   SHORTcpy(eodir, fileid);
   eodir[4] = '\0';
-  return S_OK;
 }
 
 struct _sendmsgstruct {
@@ -296,8 +292,8 @@ struct _sendmsgstruct {
   LONG errcode;
 };
 
-int 
-append_sig (int fd)
+int
+append_sig(int fd)
 {
   FILE *fp;
   PATH sigfile;
@@ -326,9 +322,8 @@ append_sig (int fd)
 }  
 
 int
-_do_message (int indx, char *bname, void *smarg)
+_do_message(int indx, char *bname, struct _sendmsgstruct *sm)
 {
-  struct _sendmsgstruct *sm = (struct _sendmsgstruct *)smarg;
   PATH msgdir;
   PATH msgfile;
   READINFO readinfo;
@@ -440,8 +435,8 @@ _do_message (int indx, char *bname, void *smarg)
   return S_OK;
 }    
     
-int 
-local_bbs_mail (char *from, char *fromname, NAMELIST to_list, char *subject, char *fname, LONG *success)
+int
+local_bbs_mail(char *from, char *fromname, NAMELIST to_list, char *subject, char *fname, LONG *success)
 {
   struct _sendmsgstruct sm;
   
@@ -464,8 +459,8 @@ local_bbs_mail (char *from, char *fromname, NAMELIST to_list, char *subject, cha
   return (*success == 0 ? S_OK : sm.errcode);
 }
 
-int 
-local_bbs_post (char *bname, char *subject, char *fname)
+int
+local_bbs_post(char *bname, char *subject, char *fname)
 {
   struct _sendmsgstruct sm;
   
@@ -482,8 +477,8 @@ local_bbs_post (char *bname, char *subject, char *fname)
   return (sm.hdr.size == 0 ? S_OK : sm.errcode);
 }
 
-int 
-local_bbs_open_mailbox (OPENINFO *oinfo)
+int
+local_bbs_open_mailbox(OPENINFO *oinfo)
 {
   if (_currbrd.btype != BOARD_NONE && _currbrd.btype != BOARD_MAIL) {
     return S_ALREADYOPEN;
@@ -505,8 +500,8 @@ local_bbs_open_mailbox (OPENINFO *oinfo)
   return S_OK;
 }  
 
-int 
-local_bbs_open_board (char *bname, OPENINFO *oinfo)
+int
+local_bbs_open_board(char *bname, OPENINFO *oinfo)
 {
   BOARD board;
   if (_currbrd.btype != BOARD_NONE && _currbrd.btype != BOARD_POST) {
@@ -534,8 +529,8 @@ local_bbs_open_board (char *bname, OPENINFO *oinfo)
   return S_OK;
 }  
 
-int 
-local_bbs_open_fileboard (char *bname, OPENINFO *oinfo)
+int
+local_bbs_open_fileboard(char *bname, OPENINFO *oinfo)
 {
   BOARD board;
   if (_currbrd.btype != BOARD_NONE && _currbrd.btype != BOARD_FILE) {
@@ -559,8 +554,8 @@ local_bbs_open_fileboard (char *bname, OPENINFO *oinfo)
   return S_OK;
 }  
 
-int 
-fname_to_pathname (char *fname, char *buf)
+void
+fname_to_pathname(char *fname, char *buf)
 {
   char *slash;
   strcpy(buf, _currbrd.wdir);
@@ -572,11 +567,10 @@ fname_to_pathname (char *fname, char *buf)
     strcat(buf, "/");
     strcat(buf, fname);
   }
-  return S_OK;
 }
 
-int 
-local_bbs_change_fileboard_dir (char *fname, OPENINFO *oinfo)
+int
+local_bbs_change_fileboard_dir(char *fname, OPENINFO *oinfo)
 {
   BOARD board;
   PATH fullname;
@@ -594,8 +588,8 @@ local_bbs_change_fileboard_dir (char *fname, OPENINFO *oinfo)
   return S_OK;
 }  
 
-int 
-local_bbs_test_board (char *bname, SHORT *pflags)
+int
+local_bbs_test_board(char *bname, SHORT *pflags)
 {
   BOARD board;
   if (_lookup_board(bname, &board) != S_OK) return S_NOSUCHBOARD;
@@ -606,8 +600,8 @@ local_bbs_test_board (char *bname, SHORT *pflags)
   return S_OK;
 }  
 
-int 
-local_bbs_close_board (void)
+int
+local_bbs_close_board(void)
 {
   free_filelist(&_currbrd.bcache);
 
@@ -628,22 +622,22 @@ struct fileenum {
 };
 
 int
-_get_file_headers(int indx, char *dir, char *fname, int isdir, void *infoarg)
+_get_file_headers(int indx, char *dir, char *fname, int isdir, void *info)
 {
-  struct fileenum *info = (struct fileenum *)infoarg;
+  struct fileenum *einfo = (struct fileenum *)info;
   struct stat stbuf;
   HEADER hdr;
   PATH path;
   strcpy(path, dir);
   strcat(path, "/");
   strcat(path, fname);
-  if (indx < info->start) return S_OK;
+  if (indx < einfo->start) return S_OK;
   if (stat(path, &stbuf) || stbuf.st_size == 0) return S_OK;
   memset(&hdr, 0, sizeof hdr);
   strncpy(hdr.title, fname, sizeof(hdr.title));
   hdr.size = stbuf.st_size;
   hdr.flags = isdir ? FILE_DIRECTORY : (is_text_file(path) ? 0 : FILE_BINARY);
-  return (info->fn(indx, &hdr, info->arg));
+  return (einfo->fn(indx, &hdr, einfo->arg));
 }
 
 /*ARGSUSED*/
@@ -688,8 +682,8 @@ local_bbs_enum_headers(SHORT chunk, SHORT start, SHORT newonly, int (*enumfn)(in
   return S_OK;
 }
 
-int 
-local_bbs_read_message (SHORT fileid, char *fname)
+int
+local_bbs_read_message(SHORT fileid, char *fname)
 {
   FILENODE *node;
   PATH myfname;
@@ -715,8 +709,8 @@ local_bbs_read_message (SHORT fileid, char *fname)
   return S_OK;  
 }
 
-int 
-local_bbs_mark_message (SHORT fileid, SHORT mflag)
+int
+local_bbs_mark_message(SHORT fileid, SHORT mflag)
 {
   FILENODE *node;
   PATH fname;
@@ -749,8 +743,8 @@ local_bbs_mark_message (SHORT fileid, SHORT mflag)
   return(chmod(fname, mode) ? S_SYSERR : S_OK);
 }
 
-int 
-local_bbs_delete_message (SHORT fileid)
+int
+local_bbs_delete_message(SHORT fileid)
 {
   FILENODE *node;
   PATH fname;
@@ -784,8 +778,8 @@ local_bbs_delete_message (SHORT fileid)
   return S_OK;
 }
 
-int 
-local_bbs_move_message (SHORT fileid, char *bname)
+int
+local_bbs_move_message(SHORT fileid, char *bname)
 {
   FILENODE *node;
   PATH oldmsgfile;
@@ -836,8 +830,8 @@ local_bbs_move_message (SHORT fileid, char *bname)
   return S_OK;
 }
 
-int 
-local_bbs_update_message (SHORT fileid, char *newfile)
+int
+local_bbs_update_message(SHORT fileid, char *newfile)
 {
   FILENODE *node;
   PATH fname;
@@ -862,8 +856,8 @@ local_bbs_update_message (SHORT fileid, char *newfile)
   return S_OK;
 }
 
-int 
-local_bbs_delete_range (SHORT start, SHORT finis, SHORT *count)
+int
+local_bbs_delete_range(SHORT start, SHORT finis, SHORT *count)
 {
   FILENODE *node;
   PATH fname;
@@ -891,8 +885,8 @@ local_bbs_delete_range (SHORT start, SHORT finis, SHORT *count)
   return S_OK;
 }
 
-int 
-local_bbs_forward_message (SHORT fileid)
+int
+local_bbs_forward_message(SHORT fileid)
 {
   FILENODE *node;
   PATH fname;
@@ -909,8 +903,8 @@ local_bbs_forward_message (SHORT fileid)
   return (forward_file_to_outside(fname, hdr.title, 0));
 }
 
-int 
-local_bbs_download (char *fname, char *protoname, char *path)
+int
+local_bbs_download(char *fname, char *protoname, char *path)
 {
   PATH fullname;
   FILE *fp;
@@ -930,8 +924,8 @@ local_bbs_download (char *fname, char *protoname, char *path)
   else return (do_download(_currbrd.bdir, fname, protoname));
 }
 
-int 
-local_bbs_forward_file (char *fname)
+int
+local_bbs_forward_file(char *fname)
 {
   PATH fullname;
   TITLE title;
@@ -945,13 +939,13 @@ local_bbs_forward_file (char *fname)
 
 /* This is used by bbs_visit_board */
 
-int 
-_mark_all_as_read (char *bname)
+int
+_mark_all_as_read(char *bname)
 {
   if (_currbrd.btype == BOARD_POST && !strcmp(_currbrd.oi.name, bname)) {
     FILENODE *node;
     get_filelist_ids(_currbrd.bdir, &_currbrd.ri);
-    time((time_t *)&_currbrd.ri.stamp);
+    time(&_currbrd.ri.stamp);
     for (node = _currbrd.bcache; node != NULL; node = node->next) {
       node->flags &= ~FILE_UNREAD;
     }
@@ -962,7 +956,7 @@ _mark_all_as_read (char *bname)
     READINFO ri;
     get_board_directory(bname, bdir);    
     get_filelist_ids(bdir, &ri);
-    time((time_t *)&ri.stamp);
+    time(&ri.stamp);
     set_bitfile_ent(bname, &ri);
   }
   return S_OK;
@@ -970,8 +964,8 @@ _mark_all_as_read (char *bname)
 
 /* This is used by bbs_enum_boards to do the counts */
 
-int 
-_board_count (BOARD *board, READINFO *rinfo)
+int
+_board_count(BOARD *board, READINFO *rinfo)
 {
   PATH bdir, fname;
   char *fnamebase;
@@ -999,8 +993,8 @@ _board_count (BOARD *board, READINFO *rinfo)
       if (stbuf.st_size > 0) {
         (board->totalposts)++;
         if (!test_readbit(rinfo, fileid)) (board->newposts)++;
-        if ((LONG)stbuf.st_mtime > board->lastpost)
-          board->lastpost = (LONG)stbuf.st_mtime;
+        if (stbuf.st_mtime > board->lastpost)
+          board->lastpost = stbuf.st_mtime;
       }
       /* 
          To test and increment board->ownedposts, we'd have to read the 

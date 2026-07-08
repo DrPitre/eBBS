@@ -22,9 +22,25 @@
 extern char *get_yytext() ;
 extern int yyleng ;
 
-int yylex __P((void));
-int yyerror __P((char *));
-int pushmenu __P((NMENU *));
+/* forward declarations for functions defined below */
+static char *mkstring(const char *s) ;
+static int menuerror(void) ;
+static int rmenuerror(void) ;
+static NMENUITEM *mkmenuitem(char *s) ;
+static char getmenuletter(char *s) ;
+static int getmenuindex(unsigned int t) ;
+static NMENU *mkmenu(NMENUITEM *mip) ;
+static void pushmenu(NMENU *mp) ;
+static NREADMENU *mkreadmenu(char *name, NREADMENUITEM *mip) ;
+static NREADMENUITEM *mkreadmenuitem(char *s) ;
+
+/* external functions without headers */
+extern char *ExpandString(char *s) ;
+extern int convert_openflag_to_int(char *s) ;
+extern int convert_cmd_to_int(char *s) ;
+extern int convert_key_to_int(char *s) ;
+extern int (*findfunc(char *s))() ;
+extern int (*findrfunc(char *s))() ;
 %}
 
 %start commands
@@ -52,7 +68,6 @@ commands :
 
 menudef :  MENU string COMMA string COMMA string COMMA string OBRACE menulist CBRACE
 {
-    NMENU *mkmenu(NMENUITEM *) ;
     NMENU *mp ;
 
     if((mp = mkmenu($10))) {
@@ -97,7 +112,6 @@ menuitem : OPAREN string COMMA string COMMA string COMMA ident COMMA commandentr
 
 rmenudef :  READMENU string COMMA string COMMA string COMMA string COMMA string COMMA string COMMA string COMMA string COMMA string COMMA string OBRACE rmenulist CBRACE
 {
-    NREADMENU *mkreadmenu(char *, NREADMENUITEM *) ;
     NREADMENU *mp ;
 
     if((mp = mkreadmenu($2, $22))) {
@@ -144,7 +158,6 @@ ident: integer
 
 command : COMMAND
 {
-    NMENUITEM *mkmenuitem(char *) ;
     char buf[512] ;
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
@@ -165,7 +178,6 @@ commandentry: command
 
 rcommand : COMMAND
 {
-    NREADMENUITEM *mkreadmenuitem(char *) ;
     char buf[512] ;
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
@@ -175,10 +187,8 @@ rcommand : COMMAND
 
 string : STRING
 {
-    char *mkstring(char *) ;
-    char *ExpandString(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng-1] = '\0' ;
     $$ = mkstring(ExpandString(buf+1)) ;
@@ -191,9 +201,8 @@ integer : INTEGER
 
 openflag : OPENFLAG
 {
-    int convert_openflag_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     $$ = convert_openflag_to_int(buf+2) ;
@@ -201,9 +210,8 @@ openflag : OPENFLAG
 
 name : ID_NAME
 {
-    int convert_cmd_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     $$ = convert_cmd_to_int(buf) ;
@@ -211,16 +219,15 @@ name : ID_NAME
 
 key : KEY
 {
-    int convert_key_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     $$ = convert_key_to_int(buf) ;
 } 
 %%
 
-char *mkstring(register char *s)
+static char *mkstring(const char *s)
 {
     register char *p ;
 
@@ -229,26 +236,23 @@ char *mkstring(register char *s)
     return p ;
 }
 
-int
-menuerror(char *s)
+static int menuerror(void)
 {
     do_echo("WARNING, invalid function in Menu definition\n") ;
     return 0 ;
 }
 
-int
-rmenuerror(HEADER *hdr, int crsline, int lastline, int openflags)
+static int rmenuerror(void)
 {
     do_echo("WARNING, invalid function in ReadMenu definition\n") ;
     return 0 ;
 }
 
-NMENUITEM *
+static NMENUITEM *
 mkmenuitem(char *s)
 {
     NMENUITEM *mip ;
     extern int line_num ;
-    extern int (*findfunc(char *))(char *) ;
     if(!(mip = (NMENUITEM *) malloc(sizeof(NMENUITEM))))
       return NULL ;
     memset(mip,0,sizeof(NMENUITEM)) ;
@@ -261,7 +265,7 @@ mkmenuitem(char *s)
     return mip ;
 }
 
-char
+static char
 getmenuletter(char *s)
 {
     register char firstch;
@@ -271,14 +275,14 @@ getmenuletter(char *s)
     return firstch;
 }
 
-int
+static int
 getmenuindex(unsigned int t)
 {
     t = (t | 0x20) - 'a' ;
     return t % MAXMENUSZ ;
 }
 
-NMENU *
+static NMENU *
 mkmenu(NMENUITEM *mip)
 {
     NMENU *mp ;
@@ -307,7 +311,7 @@ mkmenu(NMENUITEM *mip)
 
 NMENU *bigMenuList = NULL ;
 
-int
+static void
 pushmenu(NMENU *mp)
 {
     NMENUITEM *mip = NULL ;
@@ -321,14 +325,13 @@ pushmenu(NMENU *mp)
     mp->commlist = mip ;
     mp->next = bigMenuList ;
     bigMenuList = mp ;
-    return 0 ;
 }
 
 NREADMENU *PostReadMenu = NULL;
 NREADMENU *MailReadMenu = NULL;
 NREADMENU *FileReadMenu = NULL;
 
-NREADMENU *
+static NREADMENU *
 mkreadmenu(char *name, NREADMENUITEM *mip)
 {
     NREADMENU *mp ;
@@ -352,12 +355,11 @@ mkreadmenu(char *name, NREADMENUITEM *mip)
     return mp ;
 }
 
-NREADMENUITEM *
+static NREADMENUITEM *
 mkreadmenuitem(char *s)
 {
     NREADMENUITEM *mip ;
     extern int line_num ;
-    extern int (*findrfunc(char *))(HEADER *, int, int, int) ;
     if(!(mip = (NREADMENUITEM *) malloc(sizeof(NREADMENUITEM))))
       return NULL ;
     memset(mip,0,sizeof(NREADMENUITEM)) ;

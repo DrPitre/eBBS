@@ -20,10 +20,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "client.h"
 #include <ctype.h>
-#include <unistd.h>
-#include "y.tab.h"
-
-int yyparse __P((void));
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -36,23 +32,20 @@ char *_menudesc_file;
 
 /* New Menu Function */
 
-int 
-GetMenuLetter (char *s)
+int GetMenuLetter(char *s)
 {
     char c;
     for (c = *s; *s; s++) if (*s >= 'A' && *s <= 'Z') return *s;
     return c;
 }
 
-int 
-GetMenuIndex (unsigned int t)
+int GetMenuIndex(unsigned int t)
 {
     t = (t | 0x20) - 'a' ;
     return t % MAXMENUSZ ;
 }
 
-char 
-InterpretMenuAction (char *action)
+char InterpretMenuAction(char *action)
 {
   if(action[0] != '$')
     return GetMenuLetter(action) ;
@@ -69,7 +62,8 @@ int currMenuEnt = -1 ;
 #if 0
 /*ARGSUSED*/
 int 
-NDoMenu (char *menu_name)
+NDoMenu(menu_name)
+char *menu_name ;
 {
   int found, update = FULLUPDATE;
   int fieldsz = t_columns/3;
@@ -149,8 +143,8 @@ NDoMenu (char *menu_name)
 }
 #endif
 
-int 
-GetMenuLine (NMENU *msp, char cmd)
+int
+GetMenuLine(NMENU *msp, char cmd)
 {
   int lineno = 4;
   char mcmd;
@@ -166,8 +160,8 @@ GetMenuLine (NMENU *msp, char cmd)
 }
 
 /*ARGSUSED*/
-int 
-NDoMenu (char *menu_name)
+int
+NDoMenu(char *menu_name)
 {
   int found, update = FULLUPDATE;
   int fieldsz = t_columns/3;
@@ -296,8 +290,8 @@ NDoMenu (char *menu_name)
       }
       item = msp->menucommands[GetMenuIndex(oldcmd)] ;
       if (item != NULL) {
-          update = (item->action_func)(item->action_arg);
-          BITCLR(update, FETCHNEW | NEWDIRECT);     
+          update = ((int (*)(char *))(item->action_func))(item->action_arg);
+          BITCLR(update, FETCHNEW | NEWDIRECT);
           if (update & MENUERROR) 
             cmd = InterpretMenuAction(item->error_action);
           else 
@@ -308,14 +302,13 @@ NDoMenu (char *menu_name)
   return FULLUPDATE;
 }
 
-int
-do_help (char *s)
+int do_help(void)
 {
     NMENU *mp ;
     NMENUITEM *mip ;
     
     if(currMenuEnt < 0)
-      return 0;
+      return DONOTHING;
     mp = menuEnt[currMenuEnt] ;
     move(3,0) ;
     clrtoeol() ;
@@ -329,8 +322,7 @@ do_help (char *s)
     return PARTUPDATE;
 }
 
-int 
-do_echo (char *s)
+int do_echo(char *s)
 {
     clear() ;
     prints("%s",s) ;
@@ -338,8 +330,7 @@ do_echo (char *s)
     return FULLUPDATE ;
 }
 
-int 
-exec_func (char *s)
+int exec_func(char *s)
 {
     int i ;
     char buf[4096] ;
@@ -368,8 +359,7 @@ exec_func (char *s)
     return FULLUPDATE ;
 }
  
-int 
-exec_func_w_pause (char *s)
+int exec_func_w_pause(char *s)
 {
     int i ;
     
@@ -402,8 +392,7 @@ exec_func_w_pause (char *s)
 
 int do_pipe_more(char *) ;
 
-int 
-revised_pipe_more (char *s)
+int revised_pipe_more(char *s)
 {
     char buf[4096] ;
     char *p ;
@@ -415,19 +404,14 @@ revised_pipe_more (char *s)
         *p='\0' ;
         parse_environment(p+1) ;
     }
-
+      
     do_pipe_more(buf) ;
     return FULLUPDATE ;
 }
 
 struct funcs {
     char *funcname ;
-    int (*funcptr)(char *) ;
-} ;
-
-struct rfuncs {
-    char *funcname ;
-    int (*funcptr)(HEADER *, int, int, int) ;
+    int (*funcptr)() ;
 } ;
 
 int NotImpl(), EndMenu(), XyzMenu(), AdminMenu(), MailMenu(), TalkMenu();
@@ -443,9 +427,9 @@ int SetUserData(), SetUserPerms(), ToggleCloak(), ToggleExempt();
 int Query(), QueryEdit();
 int MailSend(), GroupSend(), ReadNewMail(), MailRead();
 int MailDisplay(), MailDelete(), MailDelRange();
-int GroupReply(), Forward();
+int MailReply(), GroupReply(), Forward();
 int Visit(), BoardCounts(), Zap(), ReadNew(), SequentialRead();
-int Boards(), AddBoard(), DeleteBoard(), ChangeBoard();
+int Boards(), SelectBoard(), AddBoard(), DeleteBoard(), ChangeBoard();
 int SetBoardMgrs();
 int Post(),  MainRead(), ReadMenuSelect();
 int PostDisplay(), PostDelete(), PostMessage(), PostDelRange(), PostMark();
@@ -526,7 +510,7 @@ struct funcs funclist[] = {
     NULL,NULL
 } ;
     
-int (*findfunc(char *s))(char *)
+int (*findfunc(char *s))()
 {
     int i ;
     
@@ -543,8 +527,7 @@ int (*findfunc(char *s))(char *)
 
 char *funcstrings[MAX_CLNTCMDS];
 
-int 
-form_function_list (void)
+void form_function_list(void)
 {
     FILE *fp;
     int i;
@@ -563,23 +546,19 @@ form_function_list (void)
       }
       fclose(fp);
     }
-    return 0;
 }
 
-int 
-free_function_list (void)
+void free_function_list(void)
 {
     int i;
     for (i=0; i<MAX_CLNTCMDS; i++)
       if (funcstrings[i] != NULL) free(funcstrings[i]);
-    return 0;
 }
 
-int 
-convert_cmd_to_int (char *s)
+int convert_cmd_to_int(char *s)
 {
     int i ;
-    
+
     for (i=0; i<MAX_CLNTCMDS; i++) {
       if (funcstrings[i] == NULL) continue;
       if (!strcmp(funcstrings[i], s)) return i;
@@ -591,8 +570,7 @@ convert_cmd_to_int (char *s)
 
 #else /* REMOTE_CLIENT */
 
-int 
-convert_cmd_to_int (char *s)
+int convert_cmd_to_int(char *s)
 {
     /* In the remote client, we're assuming numbers will be here */
     return 0;
@@ -602,12 +580,18 @@ convert_cmd_to_int (char *s)
 
 int line_num ;
 
-int 
-ParseMenu (void)
+int ParseMenu(void)
 {
     FILE *fp ;
     extern FILE *yyin ;
-    
+
+#ifdef REMOTE_CLIENT
+    /* 
+       First look for .ebbsmenu in the current directory, which
+       better be the user's home directory.
+    */
+    if((fp = fopen(".ebbsmenu","r"))); else
+#endif
     if((fp = fopen(_menudesc_file,"r")) == NULL) {
         perror("open menu file") ;
         return -1 ;
@@ -629,12 +613,12 @@ ParseMenu (void)
 
 int MainReadHelp(), MailReadHelp(), FileReadHelp();
 int MailDisplay(), MailDelete(), MailDelRange(), SequentialReadMail();
-int GroupReply(), Forward(), SequentialRead();
+int MailReply(), GroupReply(), Forward(), SequentialRead();
 int PostDisplay(), PostDelete(), PostMessage(), PostDelRange(), PostMark();
 int FileView(), FileReadMenuProto(), ReadMenuSelect(), PostEdit(), PostMove();
 int FileReceive(), FileReadMenuSelect(), FileForward(), FileChdir();
 
-struct rfuncs rfunclist[] = {
+struct funcs rfunclist[] = {
     "MainReadHelp",MainReadHelp,
     "MailReadHelp",MailReadHelp,
     "FileReadHelp",FileReadHelp,
@@ -665,18 +649,17 @@ struct rfuncs rfunclist[] = {
     NULL, NULL
 };
 
-int (*findrfunc(char *s))(HEADER *, int, int, int)
+int (*findrfunc(char *s))()
 {
     int i ;
-
+    
     for(i=0;rfunclist[i].funcname;i++)
       if(!strcmp(rfunclist[i].funcname,s))
         return rfunclist[i].funcptr ;
     return NULL ;
 }
 
-int 
-convert_key_to_int (char *s)
+int convert_key_to_int(char *s)
 {
     s++;
     if (*s == '^') {
@@ -686,28 +669,23 @@ convert_key_to_int (char *s)
     return ((int)*s);
 }
 
-int 
-convert_openflag_to_int (char *s)
+int convert_openflag_to_int(char *s)
 {
     if (*s == 'P' || *s == 'p') return OPEN_POST;
     else if (*s == 'M' || *s == 'm') return OPEN_MANAGE;
     else return 0;
 }
     
-int 
-yywrap (void)
+int yywrap(void)
 {
     return 1 ;
 }
 
-/*ARGSUSED*/
-int
-yyerror (char *s)
+void yyerror(void)
 {
     char buf[512] ;
     sprintf(buf,"syntax error in '%s' %d.\n",_menudesc_file,line_num) ;
     do_echo(buf) ;
-    return 0 ;
 }
 
 /* Error list: hardcoded for now. TODO: put in menu.desc */

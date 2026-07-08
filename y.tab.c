@@ -113,9 +113,25 @@
 extern char *get_yytext() ;
 extern int yyleng ;
 
-int yylex __P((void));
-int yyerror __P((char *));
-int pushmenu __P((NMENU *));
+/* forward declarations for functions defined below */
+static char *mkstring(const char *s) ;
+static int menuerror(void) ;
+static int rmenuerror(void) ;
+static NMENUITEM *mkmenuitem(char *s) ;
+static char getmenuletter(char *s) ;
+static int getmenuindex(unsigned int t) ;
+static NMENU *mkmenu(NMENUITEM *mip) ;
+static void pushmenu(NMENU *mp) ;
+static NREADMENU *mkreadmenu(char *name, NREADMENUITEM *mip) ;
+static NREADMENUITEM *mkreadmenuitem(char *s) ;
+
+/* external functions without headers */
+extern char *ExpandString(char *s) ;
+extern int convert_openflag_to_int(char *s) ;
+extern int convert_cmd_to_int(char *s) ;
+extern int convert_key_to_int(char *s) ;
+extern int (*findfunc(char *s))() ;
+extern int (*findrfunc(char *s))() ;
 
 
 /* Enabling traces.  */
@@ -138,7 +154,7 @@ int pushmenu __P((NMENU *));
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 32 "gram.y"
+#line 48 "gram.y"
 {
   int ival ;
   char * sval ;
@@ -148,7 +164,7 @@ typedef union YYSTYPE
   NREADMENU *rmval ;
 }
 /* Line 193 of yacc.c.  */
-#line 152 "y.tab.c"
+#line 168 "y.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -161,7 +177,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 165 "y.tab.c"
+#line 181 "y.tab.c"
 
 #ifdef short
 # undef short
@@ -457,9 +473,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    48,    48,    49,    50,    51,    53,    66,    73,    77,
-      84,    98,   116,   120,   127,   140,   142,   145,   155,   157,
-     166,   176,   187,   192,   200,   202,   212
+       0,    64,    64,    65,    66,    67,    69,    81,    88,    92,
+      99,   113,   130,   134,   141,   154,   156,   159,   168,   170,
+     179,   188,   197,   202,   209,   211,   220
 };
 #endif
 
@@ -1405,9 +1421,8 @@ yyreduce:
   switch (yyn)
     {
         case 6:
-#line 54 "gram.y"
+#line 70 "gram.y"
     {
-    NMENU *mkmenu(NMENUITEM *) ;
     NMENU *mp ;
 
     if((mp = mkmenu((yyvsp[(10) - (11)].mival)))) {
@@ -1417,36 +1432,36 @@ yyreduce:
         mp->menu_default = (yyvsp[(8) - (11)].sval) ;
         pushmenu(mp) ;
     }
-;}
+}
     break;
 
   case 7:
-#line 67 "gram.y"
+#line 82 "gram.y"
     {
     extern char *default_env ;
     default_env = (yyvsp[(3) - (4)].sval) ;
     parse_default() ;
-;}
+}
     break;
 
   case 8:
-#line 74 "gram.y"
+#line 89 "gram.y"
     {
     (yyval.mival) = (yyvsp[(1) - (1)].mival) ;
-;}
+}
     break;
 
   case 9:
-#line 78 "gram.y"
+#line 93 "gram.y"
     {
     if((yyvsp[(1) - (2)].mival))
       (yyvsp[(2) - (2)].mival)->prev = (yyvsp[(1) - (2)].mival) ;
     (yyval.mival) = (yyvsp[(2) - (2)].mival) ;
-;}
+}
     break;
 
   case 10:
-#line 85 "gram.y"
+#line 100 "gram.y"
     {
     register NMENUITEM *mip ;
 
@@ -1458,13 +1473,12 @@ yyreduce:
         mip->help = (yyvsp[(12) - (13)].sval) ;
     }
     (yyval.mival) = mip ;
-;}
+}
     break;
 
   case 11:
-#line 99 "gram.y"
+#line 114 "gram.y"
     {
-    NREADMENU *mkreadmenu(char *, NREADMENUITEM *) ;
     NREADMENU *mp ;
 
     if((mp = mkreadmenu((yyvsp[(2) - (23)].sval), (yyvsp[(22) - (23)].rmival)))) {
@@ -1478,27 +1492,27 @@ yyreduce:
         mp->menu_field3 = (yyvsp[(16) - (23)].sval);
         mp->menu_field4 = (yyvsp[(18) - (23)].sval);
     }
-;}
+}
     break;
 
   case 12:
-#line 117 "gram.y"
+#line 131 "gram.y"
     {
     (yyval.rmival) = (yyvsp[(1) - (1)].rmival) ;
-;}
+}
     break;
 
   case 13:
-#line 121 "gram.y"
+#line 135 "gram.y"
     {
     if((yyvsp[(1) - (2)].rmival))
       (yyvsp[(2) - (2)].rmival)->next = (yyvsp[(1) - (2)].rmival) ;
     (yyval.rmival) = (yyvsp[(2) - (2)].rmival) ;
-;}
+}
     break;
 
   case 14:
-#line 128 "gram.y"
+#line 142 "gram.y"
     {
     register NREADMENUITEM *mip ;
 
@@ -1509,123 +1523,116 @@ yyreduce:
         mip->help = (yyvsp[(10) - (11)].sval) ;
     }
     (yyval.rmival) = mip ;
-;}
+}
     break;
 
   case 15:
-#line 141 "gram.y"
-    { (yyval.ival) = (yyvsp[(1) - (1)].ival) ; ;}
+#line 155 "gram.y"
+    { (yyval.ival) = (yyvsp[(1) - (1)].ival) ; }
     break;
 
   case 16:
-#line 143 "gram.y"
-    { (yyval.ival) = (yyvsp[(1) - (1)].ival) ; ;}
+#line 157 "gram.y"
+    { (yyval.ival) = (yyvsp[(1) - (1)].ival) ; }
     break;
 
   case 17:
-#line 146 "gram.y"
+#line 160 "gram.y"
     {
-    NMENUITEM *mkmenuitem(char *) ;
     char buf[512] ;
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
 
     (yyval.mival) = mkmenuitem(buf+1) ;
-;}
+}
     break;
 
   case 18:
-#line 156 "gram.y"
-    { (yyval.mival) = (yyvsp[(1) - (1)].mival); ;}
+#line 169 "gram.y"
+    { (yyval.mival) = (yyvsp[(1) - (1)].mival); }
     break;
 
   case 19:
-#line 158 "gram.y"
+#line 171 "gram.y"
     {
     NMENUITEM *mip = (yyvsp[(1) - (2)].mival) ;
 
     if(mip)
       mip->action_arg = (yyvsp[(2) - (2)].sval) ;
     (yyval.mival) = mip ;
-;}
+}
     break;
 
   case 20:
-#line 167 "gram.y"
+#line 180 "gram.y"
     {
-    NREADMENUITEM *mkreadmenuitem(char *) ;
     char buf[512] ;
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
 
     (yyval.rmival) = mkreadmenuitem(buf+1) ;
-;}
+}
     break;
 
   case 21:
-#line 177 "gram.y"
+#line 189 "gram.y"
     {
-    char *mkstring(char *) ;
-    char *ExpandString(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng-1] = '\0' ;
     (yyval.sval) = mkstring(ExpandString(buf+1)) ;
-;}
+}
     break;
 
   case 22:
-#line 188 "gram.y"
+#line 198 "gram.y"
     {
     (yyval.ival) = atoi(get_yytext()) ;
-;}
+}
     break;
 
   case 23:
-#line 193 "gram.y"
+#line 203 "gram.y"
     {
-    int convert_openflag_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     (yyval.ival) = convert_openflag_to_int(buf+2) ;
-;}
+}
     break;
 
   case 24:
-#line 200 "gram.y"
-    { (yyval.ival) = (yyvsp[(1) - (1)].ival); ;}
+#line 209 "gram.y"
+    { (yyval.ival) = (yyvsp[(1) - (1)].ival); }
     break;
 
   case 25:
-#line 203 "gram.y"
+#line 212 "gram.y"
     {
-    int convert_cmd_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     (yyval.ival) = convert_cmd_to_int(buf) ;
-;}
+}
     break;
 
   case 26:
-#line 213 "gram.y"
+#line 221 "gram.y"
     {
-    int convert_key_to_int(char *) ;
     char buf[512] ;
-    
+
     strncpy(buf,get_yytext(),yyleng) ;
     buf[yyleng] = '\0' ;
     (yyval.ival) = convert_key_to_int(buf) ;
-;}
+}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1629 "y.tab.c"
+#line 1636 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1839,10 +1846,10 @@ yyreturn:
 }
 
 
-#line 221 "gram.y"
+#line 228 "gram.y"
 
 
-char *mkstring(register char *s)
+static char *mkstring(const char *s)
 {
     register char *p ;
 
@@ -1851,26 +1858,23 @@ char *mkstring(register char *s)
     return p ;
 }
 
-int
-menuerror(char *s)
+static int menuerror(void)
 {
     do_echo("WARNING, invalid function in Menu definition\n") ;
     return 0 ;
 }
 
-int
-rmenuerror(HEADER *hdr, int crsline, int lastline, int openflags)
+static int rmenuerror(void)
 {
     do_echo("WARNING, invalid function in ReadMenu definition\n") ;
     return 0 ;
 }
 
-NMENUITEM *
+static NMENUITEM *
 mkmenuitem(char *s)
 {
     NMENUITEM *mip ;
     extern int line_num ;
-    extern int (*findfunc(char *))(char *) ;
     if(!(mip = (NMENUITEM *) malloc(sizeof(NMENUITEM))))
       return NULL ;
     memset(mip,0,sizeof(NMENUITEM)) ;
@@ -1883,7 +1887,7 @@ mkmenuitem(char *s)
     return mip ;
 }
 
-char
+static char
 getmenuletter(char *s)
 {
     register char firstch;
@@ -1893,14 +1897,14 @@ getmenuletter(char *s)
     return firstch;
 }
 
-int
+static int
 getmenuindex(unsigned int t)
 {
     t = (t | 0x20) - 'a' ;
     return t % MAXMENUSZ ;
 }
 
-NMENU *
+static NMENU *
 mkmenu(NMENUITEM *mip)
 {
     NMENU *mp ;
@@ -1929,7 +1933,7 @@ mkmenu(NMENUITEM *mip)
 
 NMENU *bigMenuList = NULL ;
 
-int
+static void
 pushmenu(NMENU *mp)
 {
     NMENUITEM *mip = NULL ;
@@ -1943,14 +1947,13 @@ pushmenu(NMENU *mp)
     mp->commlist = mip ;
     mp->next = bigMenuList ;
     bigMenuList = mp ;
-    return 0 ;
 }
 
 NREADMENU *PostReadMenu = NULL;
 NREADMENU *MailReadMenu = NULL;
 NREADMENU *FileReadMenu = NULL;
 
-NREADMENU *
+static NREADMENU *
 mkreadmenu(char *name, NREADMENUITEM *mip)
 {
     NREADMENU *mp ;
@@ -1974,12 +1977,11 @@ mkreadmenu(char *name, NREADMENUITEM *mip)
     return mp ;
 }
 
-NREADMENUITEM *
+static NREADMENUITEM *
 mkreadmenuitem(char *s)
 {
     NREADMENUITEM *mip ;
     extern int line_num ;
-    extern int (*findrfunc(char *))(HEADER *, int, int, int) ;
     if(!(mip = (NREADMENUITEM *) malloc(sizeof(NREADMENUITEM))))
       return NULL ;
     memset(mip,0,sizeof(NREADMENUITEM)) ;

@@ -22,21 +22,19 @@
 */
 
 #include <stdio.h>
-#include <sys/param.h>
-#include <sys/wait.h>
-#include <signal.h>
+#include <inttypes.h>
 #include <string.h>
-#include <strings.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <sys/param.h>
+#include <signal.h>
 #include "osdeps.h"
+#include "io.h"
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
 # include <malloc.h>
 #endif
 #include <fcntl.h>
-#include "io.h"
-#include "screen.h"
 
 #define MAXENVS (200)
 
@@ -51,22 +49,19 @@ int gotsigchld;          /* for communication with SIGCHLD handler */
 
 int g_child_pid = -1;
 
-int 
-dumbreturn (void)
+void dumbreturn(void)
 {
     int ch ;
     prints("Press [RETURN] to continue") ;
     while((ch = igetch()) != EOF)
         if(ch == '\n' || ch == '\r')
     	    break ;
-    return 0 ;
 }
 
-int 
-pressreturn (void)
+int pressreturn(void)
 {
     char c ;
-    if (dumb_term) return (dumbreturn());
+    if (dumb_term) return (dumbreturn(), 0);
     getdata(t_lines-1,0,"Press [RETURN] to continue",&c,1,NOECHO,0) ;
     move(t_lines-1,0) ;
     clrtoeol() ;
@@ -74,21 +69,18 @@ pressreturn (void)
     return 0 ;
 }
 
-int 
-bell (void)
+void bell(void)
 {
     fprintf(stderr,"%c",CTRL('G')) ;
-    return 0 ;
 }
 
 char *bbsenv[MAXENVS] ;
 int numbbsenvs = 0 ;
  
-int 
-bbssetenv (char *env, char *val)
+int bbssetenv(char *env, char *val)
 {
     register int i,len ;
- 
+
     if(numbbsenvs == 0)
       bbsenv[0] = NULL ;
     len = strlen(env) ;
@@ -113,8 +105,9 @@ bbssetenv (char *env, char *val)
 #define QUOTEMODE  (2)
 
 #if 0
-void 
-sigchld_handler (int sig)
+void
+sigchld_handler(sig)
+int sig;
 {
     if (sig == SIGCHLD) {
         gotsigchld = 1;
@@ -123,8 +116,7 @@ sigchld_handler (int sig)
 }
 #endif
 
-int 
-do_exec (char *com, char *wd)
+int do_exec(char *com, char *wd)
 {
     char path[MAXFILELEN] ;
     char pcom[MAXCOMSZ] ;
@@ -226,8 +218,7 @@ do_exec (char *com, char *wd)
 
 #define BINDIR "bin/"
 
-int 
-do_pipe_more (char *com)
+int do_pipe_more(char *com)
 {
     char path[MAXPATHLEN] ;
     char pcom[MAXCOMSZ] ;
@@ -282,9 +273,9 @@ do_pipe_more (char *com)
     if(argptr == 0)
       return -1 ;
     if(*arglist[0] == '/')
-      strncpy(path,arglist[0],MAXPATHLEN) ;
+      strncpy(path,arglist[0],MAXPATHLEN-1) ;
     else
-      strncat(path,arglist[0],MAXPATHLEN) ;
+      strncat(path,arglist[0],MAXPATHLEN-1) ;
     if(pipe(fd) < 0) {
         perror("Pipe!") ;
         return -1 ;

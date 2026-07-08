@@ -26,14 +26,11 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #include <signal.h>
 #include <time.h>
-#include <ctype.h>
-#include <unistd.h>
 
 NAMELIST acctlist;
 extern LOGININFO myinfo;     /* for idle timeout in Monitor */
 
-int 
-CheckUserid (char *userid)
+int CheckUserid(char *userid)
 {
   ACCOUNT acct;
   if (userid[0] == '\0') return 1;
@@ -42,8 +39,7 @@ CheckUserid (char *userid)
   return 0;
 }
 
-int 
-PromptForAccountInfo (ACCOUNT *acct, int for_self)
+int PromptForAccountInfo(ACCOUNT *acct, int for_self)
 {
   PASSWD passcfm;
   char ans[4];
@@ -100,10 +96,8 @@ PromptForAccountInfo (ACCOUNT *acct, int for_self)
 }
 
 /*ARGSUSED*/
-int
-AllUsersFunc (int indx, ACCOUNT *acct, void *infoarg)
+int AllUsersFunc(int indx, ACCOUNT *acct, struct enum_info *info)
 {
-  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints("%-14s %-30s   %s\n","User Id", "User Name", "Last Login");
@@ -111,7 +105,7 @@ AllUsersFunc (int indx, ACCOUNT *acct, void *infoarg)
 
   prints("%-14s %-30s %c %s", acct->userid, acct->username,
    BITISSET(acct->flags, FLG_EXEMPT) ? 'X': ' ',
-   (acct->lastlogin == 0) ? "\n":ctime((time_t *)&acct->lastlogin));
+   (acct->lastlogin == 0) ? "\n":ctime(&acct->lastlogin));
 
   info->currline++;
   info->count++;
@@ -137,8 +131,7 @@ AllUsersFunc (int indx, ACCOUNT *acct, void *infoarg)
   return S_OK;
 }
 
-int 
-AllUsers (void)
+AllUsers()
 {
   struct enum_info info;
   info.count = 0;
@@ -154,10 +147,8 @@ AllUsers (void)
 }
 
 /*ARGSUSED*/
-int
-OnlineUsersFunc (int indx, USEREC *urec, void *infoarg)
+int OnlineUsersFunc(int indx, USEREC *urec, struct enum_info *info)
 {
-  struct enum_info *info = (struct enum_info *)infoarg;
   if (info->topline == info->currline) {
     move(info->topline-1, 0);
     prints("%-12s    %-25s %-25s %s %s\n", 
@@ -194,8 +185,7 @@ OnlineUsersFunc (int indx, USEREC *urec, void *infoarg)
   return S_OK;
 }
 
-int 
-OnlineUsers (void)
+OnlineUsers()
 {
   struct enum_info info;
   info.count = 0;
@@ -222,8 +212,7 @@ struct shorturec {
 
 int global_ulist_sz;
 
-int 
-SetupGlobalList (void)
+SetupGlobalList()
 {
   global_ulist_sz = (t_lines - 4) * 4;
   global_ulist = 
@@ -238,8 +227,7 @@ SetupGlobalList (void)
 }
 
 /*ARGSUSED*/
-int 
-FillShortUserList (int indx, USEREC *urec, void *arg)
+int FillShortUserList(int indx, USEREC *urec, void *arg)
 {
   int i;
   for (i=0; i<global_ulist_sz; i++)
@@ -264,8 +252,7 @@ FillShortUserList (int indx, USEREC *urec, void *arg)
   return S_OK;
 }
 
-int 
-DoShortUserList (void)
+DoShortUserList()
 {
   int i, y = 3, x = 0, ucount = 0;
   time_t now;
@@ -302,8 +289,7 @@ DoShortUserList (void)
   return ucount;
 }
 
-int 
-ShortList (void)
+ShortList()
 {
   int i;
   if (global_ulist == NULL) {
@@ -319,8 +305,7 @@ int monitor_max;
 int monitor_idle;
 char global_modechar_key[75];
 
-int 
-form_modechar_key (void)
+form_modechar_key()
 {
   SHORT i;
   int left;
@@ -342,8 +327,8 @@ form_modechar_key (void)
   return 0;
 }
 
-void 
-monitor_refresh (int sig)
+void
+monitor_refresh(int sig)
 {
   int i, boottime;
   if (sig) signal(sig, SIG_IGN);
@@ -363,8 +348,7 @@ monitor_refresh (int sig)
   alarm(MONITOR_REFRESH);
 }
 
-int 
-Monitor (void)
+Monitor()
 {
   void (*asig)();
   char ch;
@@ -398,8 +382,7 @@ or CTRL-D to exit.\n");
   return FULLUPDATE;
 }
 
-int 
-SetPasswd (void)
+SetPasswd()
 {
   ACCOUNT acct;
   int rc;
@@ -441,8 +424,7 @@ SetPasswd (void)
   return PARTUPDATE;
 }
 
-int 
-SetUsername (void)
+SetUsername()
 {
   UNAME username;
   int rc;
@@ -459,8 +441,7 @@ SetUsername (void)
   return PARTUPDATE;
 }
 
-int 
-SetAddress (void)
+SetAddress()
 {
   MAIL email;
   int rc;
@@ -477,8 +458,7 @@ SetAddress (void)
   return PARTUPDATE;
 }
 
-int 
-SetTermtype (void)
+SetTermtype()
 {
   TERM terminal;
   int rc;
@@ -508,8 +488,7 @@ SetTermtype (void)
   return FULLUPDATE;
 }
 
-int 
-SetCharset (void)
+SetCharset()
 {
   CSET charset;
   int rc;
@@ -538,13 +517,12 @@ SetCharset (void)
   return FULLUPDATE;
 }
 
-int 
-UserDisplay (ACCOUNT *acct)
+void UserDisplay(ACCOUNT *acct)
 {
   prints("[%s]\n", acct->userid);
   prints("User name:       %s\n", acct->username);
   if (acct->lastlogin) {
-    prints("Last login time: %s", ctime((time_t *)&acct->lastlogin));
+    prints("Last login time: %s", ctime(&acct->lastlogin));
     prints("Last login from: %s\n", acct->fromhost);
   }
   else prints("Never logged in.\n");
@@ -554,11 +532,9 @@ UserDisplay (ACCOUNT *acct)
   if (*acct->address)  prints("Address:         %s\n", acct->address);
   if (*acct->email)    prints("E-mail address:  %s\n", acct->email);
   clrtobot();
-  return 0;
-}
+}        
 
-int 
-ShowOwnInfo (void)
+ShowOwnInfo()
 {
   ACCOUNT acct;
   int rc;
@@ -572,8 +548,7 @@ ShowOwnInfo (void)
   return PARTUPDATE;
 }
 
-int 
-AddAccount (void)
+AddAccount()
 {
   int rc;
   ACCOUNT acct;
@@ -600,8 +575,7 @@ AddAccount (void)
   return PARTUPDATE;
 }
 
-int 
-DeleteAccount (void)
+DeleteAccount()
 {
   NAME namebuf;
   int rc;
@@ -632,8 +606,7 @@ DeleteAccount (void)
   return FULLUPDATE;
 }
 
-int 
-SetUserData (void)
+SetUserData()
 {
   NAME userid;
   ACCOUNT acct, nr;
@@ -738,8 +711,8 @@ char *global_permstrs[32];
 #define PERMMENUNUMBER(c) ((c)>='A'?((c)-'A'):((c)-'1'+26))
 #define PBITSET(m,i)       (((m)>>(i))&1)
 
-LONG 
-SetPermMenu (LONG pbits)
+LONG
+SetPermMenu(LONG pbits)
 {
   int i, rc, done = 0;
   char buf[80], choice[2];
@@ -788,8 +761,7 @@ SetPermMenu (LONG pbits)
   return (pbits);
 }
 
-int 
-SetUserPerms (void)
+SetUserPerms()
 {
   int rc;
   NAME namebuf;
@@ -828,8 +800,7 @@ SetUserPerms (void)
   return FULLUPDATE;
 }
 
-int 
-QueryEdit (void)
+QueryEdit()
 {
   PATH planfile;
   char ans[7];
@@ -860,16 +831,13 @@ QueryEdit (void)
 }
 
 /*ARGSUSED*/
-int
-_query_if_logged_in(int indx, USEREC *urec, void *loggedinarg)
+int _query_if_logged_in(int indx, USEREC *urec, int *loggedin)
 {
-  int *loggedin = (int *)loggedinarg;
   (*loggedin)++;
   return ENUM_QUIT;
 }
 
-int 
-Query (void)
+Query()
 {
   NAME namebuf;
   ACCOUNT acct;
@@ -904,7 +872,7 @@ Query (void)
   if (acct.lastlogin == 0)
     prints("Never logged in.\n");
   else prints("%s from %s %s %s", in_now ? "On" : "Last login", acct.fromhost,
-	      in_now ? "since" : "at", ctime((time_t *)&acct.lastlogin));
+	      in_now ? "since" : "at", ctime(&acct.lastlogin));
 
   if (acct.realname[0] != '\0') {
     prints("Real name: %s\n", acct.realname);
@@ -931,8 +899,7 @@ Query (void)
   return PARTUPDATE;
 }
 
-int 
-ToggleCloak (void)
+ToggleCloak()
 {
   int rc;
   move(3,0);
@@ -946,8 +913,7 @@ ToggleCloak (void)
   return PARTUPDATE;
 }
 
-int 
-ToggleExempt (void)
+ToggleExempt()
 {
   int rc;
   NAME namebuf;
@@ -980,8 +946,7 @@ ToggleExempt (void)
   return FULLUPDATE;
 }
 
-int 
-SetPager (void)
+SetPager()
 {
   int rc;
   char ans[3], buf[40];
@@ -1018,8 +983,7 @@ SetPager (void)
   return PARTUPDATE;
 }
 
-int 
-SignatureEdit (void)
+SignatureEdit()
 {
   PATH sigfile;
   char ans[7];
@@ -1050,8 +1014,7 @@ SignatureEdit (void)
   return FULLUPDATE;
 }
 
-int 
-MenuConfig (void)
+MenuConfig()
 {
   int rc;
   SHORT expert = (myinfo.flags & FLG_EXPERT);

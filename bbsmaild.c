@@ -1,6 +1,5 @@
 #include "server.h"
 #include <pwd.h>
-#include <unistd.h>
 
 /* Header types, so we can deal with continuations */
 #define HEADER_NONE    0
@@ -28,7 +27,7 @@ char *sptr;
 int ssize;
 
 char *
-identify_header (char *str, int *hdr_type)
+identify_header(char *str, int *hdr_type)
 {
     char *cp, *colon;
     colon = strchr(str, ':');
@@ -53,8 +52,8 @@ identify_header (char *str, int *hdr_type)
     return cp;
 }
 
-int 
-split_sender (int type, char *str)
+int
+split_sender(int type, char *str)
 {
     /* 
         This splits a From: or Reply-To: header into the address and 
@@ -97,8 +96,8 @@ split_sender (int type, char *str)
     return 0;
 }
 
-int 
-eat_header (char *str)
+int
+eat_header(char *str)
 {
     /* 
        This attempts to determine if we are reading headers. It is 
@@ -143,28 +142,26 @@ eat_header (char *str)
 }
 
 int
-show_failures (int indx, char *userid, void *maskarg)
+show_failures(int indx, char *userid, LONG *mask)
 {
-    LONG *mask = (LONG *)maskarg;
     if ((*mask) & (LONG)(1<<indx)) {
         fprintf(stderr, "%s: bbs_mail failed\n", userid);
     }
     return S_OK;
 }
 
-int 
-usage (char *prog)
+void
+usage(char *prog)
 {
     if (daemon)
         fprintf(stderr, "Usage: %s [-d bbs-dir] user ...\n", prog);
     else
-        fprintf(stderr, "Usage: %s [-d bbs-dir] [-s subject] user ...\n",
+        fprintf(stderr, "Usage: %s [-d bbs-dir] [-s subject] user ...\n", 
                 prog);
-    return 0;
 }
 
-int 
-main (int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     char *bbshome = NULL, *prog;
     char copybuf[256];

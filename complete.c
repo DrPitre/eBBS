@@ -31,16 +31,14 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # include <malloc.h>
 #endif
 
-int 
-NumInList (NAMELIST list)
+int NumInList(NAMELIST list)
 {
   int num = 0;
   for (;list; list=list->next, num++);
   return num;
 }
 
-int 
-ListMaxLen (NAMELIST list, int lines)
+int ListMaxLen(NAMELIST list, int lines)
 {
   int len, max = 0;
   for (;list && lines; list=list->next, lines--) {
@@ -50,8 +48,7 @@ ListMaxLen (NAMELIST list, int lines)
   return max;
 }
 
-int 
-chkstr (char *tag, char *name)
+int chkstr(char *tag, char *name)
 {
   register char c1, c2;
   while(*tag != '\0') {
@@ -63,8 +60,8 @@ chkstr (char *tag, char *name)
   return 1;
 }
 
-NAMELIST 
-GetSubList (register char *tag, register NAMELIST list)
+NAMELIST
+GetSubList(register char *tag, register NAMELIST list)
 {
   NAMELIST wlist, wcurr;
   
@@ -88,8 +85,8 @@ GetSubList (register char *tag, register NAMELIST list)
   return wlist ;
 }
 
-void 
-ClearSubList (NAMELIST *list)
+void
+ClearSubList(NAMELIST *list)
 {
   NAMENODE *trav = *list, *next;
   while (trav) {
@@ -109,8 +106,7 @@ ClearSubList (NAMELIST *list)
    is used to find the possible completions.
 */
 
-int
-namecomplete(int (*completefn)(NAMELIST *, char *), NAMELIST complist, char *prompt, char *data, int datasize)
+int namecomplete(int (*completefn)(NAMELIST *, char *), NAMELIST complist, char *prompt, char *data, int datasize)
 {
   char *temp;
   int ch ;
@@ -211,7 +207,7 @@ namecomplete(int (*completefn)(NAMELIST *, char *), NAMELIST complist, char *pro
 	  move(y,x) ;
 	  continue ;
 	}
-	if(count < datasize) {
+	if(count < datasize-1) {
           morelist = NULL;
 	  *temp++ = ch ;
 	  count++ ;
@@ -250,8 +246,9 @@ namecomplete(int (*completefn)(NAMELIST *, char *), NAMELIST complist, char *pro
 
 #if 0
 
-int 
-namecomplete (NAMELIST list, char *prompt, char *data)
+namecomplete(list, prompt, data)
+NAMELIST list;
+char *prompt, *data ;
 {
   NAMENODE dummynode;
   char *temp;
@@ -389,7 +386,7 @@ namecomplete (NAMELIST list, char *prompt, char *data)
   if(!fgets(data,WORDSIZE,stdin))
     generic_abort() ;
   data[WORDSIZE] = '\0';
-  if((temp = strchr(data,'\n')))
+  if(temp = strchr(data,'\n'))
     *temp = '\0' ;
   return 0 ;
 }

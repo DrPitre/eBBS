@@ -19,16 +19,14 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "common.h"
-#include <unistd.h>
-#include <ctype.h>
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
 # include <malloc.h>
 #endif
 
-void 
-free_namelist (NAMELIST *list)
+void
+free_namelist(NAMELIST *list)
 {
   NAMENODE *trav = *list, *next;
   while (trav) {
@@ -39,15 +37,15 @@ free_namelist (NAMELIST *list)
   }
 }
 
-void 
-create_namelist (NAMELIST *list)
+void
+create_namelist(NAMELIST *list)
 {
   free_namelist(list);
   *list = NULL;
 }
 
-int 
-add_namelist (NAMELIST *list, char *name, char *name_before)
+int
+add_namelist(NAMELIST *list, char *name, char *name_before)
 {
   NAMENODE *node;
   NAMENODE *trav = *list;
@@ -75,8 +73,8 @@ add_namelist (NAMELIST *list, char *name, char *name_before)
   return 0;
 }
 
-int 
-remove_namelist (NAMELIST *list, char *name)
+int
+remove_namelist(NAMELIST *list, char *name)
 {
   NAMENODE *prev = NULL;
   NAMENODE *curr = *list;
@@ -95,8 +93,8 @@ remove_namelist (NAMELIST *list, char *name)
   return S_NOSUCHREC;
 }            
 
-int 
-is_in_namelist (NAMELIST list, char *name)
+int
+is_in_namelist(NAMELIST list, char *name)
 {
   while (list) {
     if (!strcasecmp(list->word, name))
@@ -116,16 +114,15 @@ apply_namelist(NAMELIST list, int (*fptr)(int, char *, void *), void *arg)
 }
 
 /*ARGSUSED*/
-int
-_write_list_element(int indx, char *name, void *fparg)
+static int
+_write_list_element(int indx, char *name, void *fp)
 {
-  FILE *fp = (FILE *)fparg;
-  fprintf(fp, "%s\n", name);
+  fprintf((FILE *)fp, "%s\n", name);
   return S_OK;
 }
 
-int 
-write_namelist (char *fname, NAMELIST list)
+int
+write_namelist(char *fname, NAMELIST list)
 {
   FILE *fp;
   if (list == NULL) unlink(fname);
@@ -140,20 +137,19 @@ write_namelist (char *fname, NAMELIST list)
 }
 
 /*ARGSUSED*/
-int
-_read_list_element (int indx, char *rec, void *arg)
+static int
+_read_list_element(int indx, char *rec, void *list)
 {
-  NAMELIST *list = (NAMELIST *)arg;
   strip_trailing_space(rec);
   rec[NAMELEN] = '\0';
-  if (!isspace(*rec) && !is_in_namelist(*list, rec)) {
-    add_namelist(list, rec, NULL);
+  if (!isspace(*rec) && !is_in_namelist(*(NAMELIST *)list, rec)) {
+    add_namelist((NAMELIST *)list, rec, NULL);
   }
   return S_OK;
 }
 
-int 
-read_namelist (char *fname, NAMELIST *list)
+int
+read_namelist(char *fname, NAMELIST *list)
 {
   create_namelist(list);
   _record_enumerate(fname, 0, _read_list_element, list);

@@ -20,7 +20,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "client.h"
-#include <ctype.h>
 #if LACKS_MALLOC_H
 # include <stdlib.h>
 #else
@@ -83,8 +82,7 @@ unsigned int conv_table[256][2] = {
 };
 
 /*ARGSUSED*/
-int 
-_conv_init_func (int indx, char *rec, void *arg)
+int _conv_init_func(int indx, char *rec, void *arg)
 {
   char *equals;
   unsigned int r;
@@ -111,8 +109,7 @@ _conv_init_func (int indx, char *rec, void *arg)
   return S_OK;
 }
 
-int 
-conv_init (char *charset)
+int conv_init(char *charset)
 {
   FILE *fp;
   unsigned int i;

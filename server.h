@@ -38,7 +38,7 @@ typedef struct _USERDATA {
   USEREC u;
   LONG perms;
   ACCESSCODES access;
-  int newmailmsgs;     /* easy (You have mail.) checking */
+  LONG newmailmsgs;     /* easy (You have mail.) checking */
   SHORT usermode;
   SHORT port;          /* this and destpid are for Talk */
   LONG destpid;        /* this tells who I am paging */
@@ -59,12 +59,12 @@ typedef struct _SERVERDATA {
   int idletimeout;
   int maxsiglines;
   int queryreal;
+  int hidehostname;
 } SERVERDATA;
 
 #define LOG_LEVEL_MAX     10
 #define LOG_LEVEL_DEFAULT 1
 
-void bbslog(int level, char *fmt, ...);
 
 /* 
    Maximum number of files per board. Be careful not to extend this beyond
@@ -76,7 +76,7 @@ void bbslog(int level, char *fmt, ...);
 #define READBITSIZE BBS_MAX_FILES   /* future plan: BBS_MAX_FILES / 8 */
 
 typedef struct _READINFO {
-  LONG stamp;
+  time_t stamp;
   char bits[READBITSIZE];
 } READINFO;
   
@@ -89,7 +89,7 @@ typedef struct _READINFO {
 #define READ_ORDER_UNSET      0x0000   /* not zapped, or unzapped */
 
 struct enumstruct {
-  int (*fn)(int, void *, void *);
+  int (*fn)();
   void *arg;
   SHORT flags;
 };
@@ -120,17 +120,17 @@ struct listcomplete {
 #define BBSLIB_BBSD     1
 extern int bbslib_user;
 
-int _match_first __P((char *, void *));
-int _match_full __P((char *, void *));
+int _match_first __P((char *, char *));
+int _match_full __P((char *, char *));
 int _change_name __P((char *, char *, char *));
 char *_append_quoted __P((char *, char *));
 char *_extract_quoted __P((char *, char *, int));
-int _record_add __P((char *, int (*)(char *, void *), void *, int (*)(char *, void *), void *));
-int _record_delete __P((char *, int (*)(char *, void *), void *));
-int _record_delete_many __P((char *, int (*)(char *, void *), void *));
-int _record_find __P((char *, int (*)(char *, void *), void *, int (*)(char *, void *), void *));
-int _record_enumerate __P((char *, int, int (*)(int, char *, void *), void *));
-int _record_replace __P((char *, int (*)(char *, void *), void *, int (*)(char *, char *, void *), void *));
+int _record_add __P((char *, int(), void *, int(), void *));
+int _record_delete __P((char *, int(), void *));
+int _record_delete_many __P((char *, int(), void *));
+int _record_find __P((char *, int(), void *, int(), void *));
+int _record_enumerate __P((char *, int, int(), void *));
+int _record_replace __P((char *, int(), void *, int(), void *));
 
 int get_bitfile_ent __P((char *, READINFO *));
 int set_bitfile_ent __P((char *, READINFO *));
@@ -156,71 +156,10 @@ int utable_free_record __P((int));
 int utable_get_record __P((int, USERDATA *));
 int utable_set_record __P((int, USERDATA *));
 int utable_find_record __P((LONG, USERDATA *));
-int utable_enumerate __P((int, char *, int (*)(int, USERDATA *, void *), void *));
+int utable_enumerate __P((int, char *, int(), void *));
 
 SHORT my_real_mode __P((void));
 char *my_userid __P((void));
 char *my_username __P((void));
 char *my_host __P((void));
-
-/* Internal server-side functions shared across multiple .c files. */
-int _has_read_access __P((BOARD *));
-int _has_post_access __P((BOARD *));
-int _lookup_board __P((char *, BOARD *));
-int _mark_all_as_read __P((char *));
-int _board_count __P((BOARD *, READINFO *));
-int _determine_access __P((LONG, char *));
-int _has_access __P((LONG));
-int _they_have_access __P((LONG, LONG));
-int _has_perms __P((LONG));
-int _lookup_account __P((char *, ACCOUNT *));
-int _set_account __P((char *, ACCOUNT *, SHORT));
-int _acct_enum_fix_readbits __P((char *, char *));
-int get_home_directory __P((char *, char *));
-int get_mail_directory __P((char *, char *));
-int get_board_directory __P((char *, char *));
-int get_read_order __P((char *, SHORT *));
-int is_me __P((char *));
-int my_utable_slot __P((void));
-int my_flag __P((SHORT));
-int get_lastlog_host __P((char *, char *));
-int get_lastlog_time __P((char *, LONG *));
-int set_lastlog __P((char *, char *));
-int is_valid_address __P((char *));
-int has_page_permission __P((USERDATA *));
-int set_real_mode __P((SHORT));
-int local_logout __P((void));
-int notify_new_mail __P((char *, int));
-int open_bbslog __P((char *, int));
-int close_bbslog __P((void));
-void set_log_header __P((char *));
-int home_bbs __P((char *));
-int execute __P((char *, char *, char *, char *, char *, char **, int));
-int _has_manager_access __P((BOARD *));
-int _lookup_ftpent __P((char *, BOARD *));
-int get_fileboard_directory __P((char *, char *));
-int do_download __P((char *, char *, char *));
-int append_file __P((int, char *));
-int copy_file __P((char *, char *, int, int));
-int chat_init_config __P((void));
-int chat_get_ignore_file __P((char *, char *));
-
-/* local_bbs_* entry points: real implementations of the libbbs API,
-   called directly by server-side utilities as well as via the
-   bbs_* macros defined in client.h. */
-int local_bbs_initialize __P((INITINFO *));
-int local_bbs_disconnect __P((void));
-int local_bbs_add_account __P((ACCOUNT *, SHORT));
-int local_bbs_delete_account __P((char *));
-int local_bbs_owninfo __P((ACCOUNT *));
-int local_bbs_get_userinfo __P((char *, ACCOUNT *));
-int local_bbs_enum_users __P((SHORT, SHORT, char *, int (*)(int, USEREC *, void *), void *));
-int local_bbs_acctnames __P((NAMELIST *, char *));
-int local_bbs_get_plan __P((char *, char *));
-int local_bbs_get_signature __P((char *));
-int local_bbs_mail __P((char *, char *, NAMELIST, char *, char *, LONG *));
-int local_bbs_open_mailbox __P((OPENINFO *));
-int local_bbs_close_board __P((void));
-int local_bbs_exit_chat __P((void));
-int local_bbs_exit_talk __P((void));
 

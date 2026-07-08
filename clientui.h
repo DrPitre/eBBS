@@ -19,7 +19,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "pbbs/io.h"
-#include "pbbs/screen.h"
 
 /*
    Header file for the user interface. This plus the remote libbbs will 
@@ -73,7 +72,7 @@ typedef struct _NMENUITEM {
     int   enabled ;
     char *default_action ;
     char *error_action ;
-    int (*action_func)(char *) ;
+    int (*action_func)() ;
     char *action_arg ;
     char *help ;
     struct _NMENUITEM *prev ;
@@ -94,7 +93,7 @@ typedef struct _NREADMENUITEM {
     int   key ;
     int   mainprivs ;
     int   boardprivs ;
-    int (*action_func)(HEADER *, int, int, int) ;
+    int (*action_func)() ;
     char *help ;
     struct _NREADMENUITEM *next ;
 } NREADMENUITEM ;
@@ -128,3 +127,6 @@ extern int NewPagePending __P((void));
 extern char ModeToChar __P((SHORT));
 extern char *ModeToString __P((SHORT));
 extern int bbperror __P((LONG, char *));
+
+/* Must be declared with prototype so callers use the correct variadic ABI on ARM64 */
+extern int prints(char *fmt, ...);

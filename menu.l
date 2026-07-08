@@ -1,7 +1,6 @@
 %{
 #include "client.h"
 #include "y.tab.h"
-#include <unistd.h>
 char *get_yytext() { return yytext ; }
 extern int line_num ;
 %}

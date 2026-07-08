@@ -46,24 +46,3 @@ struct screenline {
 #endif
     unsigned char data[LINELEN] ;
 } ;
-
-int fullscreen(void);
-int redoscr(void);
-int refresh(void);
-int clear(void);
-int clrtoeol(void);
-int clrtobot(void);
-int move(int, int);
-int getyx(int *, int *);
-int addch(int);
-int initscr(void);
-int outc(unsigned char);
-int outs(char *);
-int outns(char *, int);
-int scroll(void);
-int rscroll(void);
-int standout(void);
-int standend(void);
-int colorstart(int);
-int colorend(void);
-int do_move(int, int, int (*)(int));

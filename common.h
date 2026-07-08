@@ -19,6 +19,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
 #include "osdeps.h"
@@ -75,7 +76,7 @@ typedef char ACCESSCODES[MAX_CLNTCMDS];
 /* Structures used in the bbs library functions. */
 
 typedef struct _INITINFO {
-  int (*abortfn)(void);
+  int (*abortfn)();
   char *tmpdir;
 } INITINFO;
 
@@ -90,7 +91,7 @@ typedef struct _LOGININFO {
   NAME userid;
   SHORT flags;
   LONG idletimeout;
-  LONG lastlogin;
+  time_t lastlogin;
   HOST fromhost;
   ACCESSCODES access;
 } LOGININFO;
@@ -103,7 +104,7 @@ typedef struct _ACCOUNT {
   LONG perms;
   SHORT flags;
   /* in home/<userid>/lastlogin */
-  LONG lastlogin;
+  time_t lastlogin;
   HOST fromhost;
   /* in home/<userid>/profile */
   TERM terminal;
@@ -175,8 +176,8 @@ typedef struct _HEADER {
   ADDR owner;
   TITLE title;
   SHORT flags;
-  LONG size;
-  LONG mtime;
+  off_t size;
+  time_t mtime;
 } HEADER;
 
 /* flags for HEADER structures */
@@ -200,7 +201,7 @@ typedef struct _BOARD {
     LONG totalposts;
     LONG newposts;
     LONG ownedposts;     /* not supported at the moment! */
-    LONG lastpost;
+    time_t lastpost;
 } BOARD;
 
 /* Flags for BOARD structs */
@@ -238,6 +239,10 @@ typedef char CHATLINE[CHATLINE_MAX+1];
 #define CHAT_LOGIN_EXISTS   "EX"
 #define CHAT_LOGIN_INVALID  "IN"
 #define CHAT_LOGIN_BOGUS    "BG"
+
+/* Initial responses sent by the talk daemon for remote clients */
+#define TALK_LOGIN_OK       "OK"
+#define TALK_LOGIN_BOGUS    "BG"
 
 /* Namelists are very useful. */
 
@@ -277,7 +282,7 @@ void create_namelist __P((NAMELIST *));
 int add_namelist __P((NAMELIST *, char *, char *));
 int remove_namelist __P((NAMELIST *, char *));
 int is_in_namelist __P((NAMELIST, char *));
-int apply_namelist __P((NAMELIST, int (*)(int, char *, void *), void *));
+int apply_namelist __P((NAMELIST, int(), void *));
 int read_namelist __P((char *, NAMELIST *));
 int write_namelist __P((char *, NAMELIST));
 
@@ -285,4 +290,3 @@ int read_headers __P((char *, HEADER *));
 int write_mail_headers __P((int, HEADER *, char *, NAMELIST));
 int write_post_headers __P((int, HEADER *, char *, char *));
 int parse_to_list __P((NAMELIST *, char *, char *));
-int _record_enumerate __P((char *, int, int (*)(int, char *, void *), void *));

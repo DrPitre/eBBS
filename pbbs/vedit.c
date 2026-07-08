@@ -22,17 +22,13 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
+#include <string.h>
+#include <stdlib.h>
 #include "osdeps.h"
 #include <sys/stat.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <unistd.h>
 #include "io.h"
-#include "screen.h"
 #include "edit.h"
-
-static int vedit_help(void);
 
 struct textline *firstline = NULL ;
 struct textline *lastline = NULL ;
@@ -44,14 +40,14 @@ struct textline *top_of_win = NULL ;
 int curr_window_line ;
 int redraw_everything ;
 
-void 
-indigestion (int i)
+void
+indigestion(int i)
 {
   fprintf(stderr,"SERIOUS INTERNAL INDIGESTION CLASS %d\n",i) ;
 }
 
 struct textline *
-back_line (struct textline *pos, int num)
+back_line(struct textline *pos, int num)
 {
   while(num-- > 0)
     if(pos && pos->prev)
@@ -60,7 +56,7 @@ back_line (struct textline *pos, int num)
 }
 
 struct textline *
-forward_line (struct textline *pos, int num)
+forward_line(struct textline *pos, int num)
 {
   while(num-- > 0)
     if(pos && pos->next)
@@ -68,8 +64,8 @@ forward_line (struct textline *pos, int num)
   return pos ;
 }
 
-int 
-getlineno (void)
+int
+getlineno()
 {
   int cnt = 0 ;
   struct textline *p = currline ;
@@ -83,7 +79,7 @@ getlineno (void)
   return cnt ;
 }
 char *
-killsp (char *s)
+killsp(char *s)
 {
   while(*s == ' ')
     s++ ;
@@ -91,10 +87,10 @@ killsp (char *s)
 }
 
 struct textline *
-alloc_line (void)
+alloc_line()
 {
   register struct textline *p ;
-
+  
   p = (struct textline *) malloc(sizeof(*p)) ;
   if(p == NULL) {
     indigestion(13) ;
@@ -111,8 +107,8 @@ alloc_line (void)
    Appends p after line in list.  keeps up with last line as well.
    */
 
-void 
-append (register struct textline *p, register struct textline *line)
+void
+append(register struct textline *p, register struct textline *line)
 {
   p->next = line->next ;
   if(line->next)
@@ -129,8 +125,8 @@ append (register struct textline *p, register struct textline *line)
    */
 
 
-void 
-delete_line (register struct textline *line)
+void
+delete_line(register struct textline *line)
 {
   if(!line->next && !line->prev) {
     line->data[0] = '\0' ;
@@ -152,8 +148,8 @@ delete_line (register struct textline *line)
    split splits 'line' right before the character pos
    */
 
-void 
-split (register struct textline *line, register int pos)
+void
+split(register struct textline *line, register int pos)
 {
   register struct textline *p = alloc_line() ;
   
@@ -186,8 +182,8 @@ split (register struct textline *line, register int pos)
    1) Some of the joined line wrapped
    */
 
-int 
-join (register struct textline *line)
+int
+join(register struct textline *line)
 {
   register int ovfl ;
   
@@ -229,8 +225,8 @@ join (register struct textline *line)
   }
 }
 
-void 
-insert_char (register int ch)
+void
+insert_char(register int ch)
 {
   register int i ;
   register char *s ;
@@ -276,8 +272,8 @@ insert_char (register int ch)
   }
 }
 
-void 
-delete_char (void)
+void
+delete_char()
 {
   register int i ;
   
@@ -292,8 +288,8 @@ delete_char (void)
   currline->len-- ;
 }
 
-void 
-vedit_init (void)
+void
+vedit_init()
 {
   register struct textline *p = alloc_line() ;
   
@@ -306,8 +302,8 @@ vedit_init (void)
   redraw_everything = NA ;
 }
 
-void 
-read_file (char *filename)
+void
+read_file(char *filename)
 {
   FILE *fp ;
   int ch ;
@@ -332,14 +328,14 @@ read_file (char *filename)
 
 #define KEEP_EDITING -2
 
-int 
-write_file (char *filename)
+int
+write_file(char *filename)
 {
   FILE *fp ;
   struct textline *p = firstline ;
   char abort[6];
   int aborted = 0;
-  getdata(0,0,"(S)ave, (A)bort, or (E)dit? [S]: ",abort,6,DOECHO,0);
+  getdata(0,0,"(S)ave, (A)bort, or (E)dit? [S]: ",abort,6,DOECHO,NULL,0);
   if (abort[0] == 'a' || abort[0] == 'A') {
     struct stat stbuf;
 #if 0
@@ -374,8 +370,8 @@ write_file (char *filename)
   return aborted;
 }
 
-void 
-display_buffer (void)
+void
+display_buffer()
 {
   register struct textline *p ;
   register int i ;
@@ -396,8 +392,10 @@ display_buffer (void)
 #define VTKEYS  (02)
 #define NORMAL  (00) 
 
-int 
-vedit (char *filename)
+void vedit_help(void) ;
+
+int
+vedit(char *filename)
 {
   int ch ;
   int foo ;
@@ -702,7 +700,7 @@ vedit (char *filename)
     redraw_everything = NA ;
     move(curr_window_line,currpnt) ;
   }
-  return -1 ;
+  return 0 ;
 }
 
 char *helptxt[] = {
@@ -728,8 +726,8 @@ char *helptxt[] = {
   "Ctrl-K  Delete to end of line",
   NULL } ;
 
-int 
-vedit_help (void)
+void
+vedit_help()
 {
   int i ,off = 0, pos = 2  ;
   
@@ -751,5 +749,4 @@ vedit_help (void)
   igetch() ;
   clear() ;
   redraw_everything = YEA ;
-  return 0 ;
 }

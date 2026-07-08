@@ -19,7 +19,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "server.h"
-#include <ctype.h>
 
 #define CHATCONFIGFILE "etc/chatconfig"
 
@@ -33,8 +32,7 @@ extern NAMELIST restricted_list;
 extern NAME mainroom;
 extern int no_punct_in_chatids;
 
-int 
-_chat_config_form_list (NAMELIST *list, char *str)
+int _chat_config_form_list(NAMELIST *list, char *str)
 {
   char *userid;  
   while ((userid = strtok(str, ", \t")) != NULL) {
@@ -45,8 +43,7 @@ _chat_config_form_list (NAMELIST *list, char *str)
 }
 
 /*ARGSUSED*/
-int 
-_chat_init_config_func (int indx, char *rec, void *arg)
+int _chat_init_config_func(int indx, char *rec, void *arg)
 {
   char *equals;
   int i;
@@ -74,19 +71,16 @@ _chat_init_config_func (int indx, char *rec, void *arg)
   return S_OK;
 }
 
-int 
-chat_init_config (void)
+int chat_init_config(void)
 {
   _record_enumerate(CHATCONFIGFILE, 0, _chat_init_config_func, NULL);
   return S_OK;
 }
 
-int 
-chat_get_ignore_file (char *userid, char *buf)
+void chat_get_ignore_file(char *userid, char *buf)
 {
   get_home_directory(userid, buf);
   strcat(buf, "/");
   strcat(buf, "chatignores");
-  return S_OK;
 }
   

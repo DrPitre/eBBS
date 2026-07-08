@@ -124,5 +124,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define C_SETCHARSET  96
 #define C_FILECHDIR   97
 #define C_MOVEMESSAGE 98
+#define C_NOOP        99
 
 #define MAX_CLNTCMDS  256

@@ -20,18 +20,20 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "client.h"
 #include <string.h>
+#ifdef REMOTE_CLIENT
+# include <stdlib.h>
+#endif
+#include <signal.h>
 #include <fcntl.h>
 #include <time.h>
-#include <unistd.h>
+#include <sys/wait.h>
 
 #ifdef REMOTE_CLIENT
 extern char *editor;
-extern char *pager;
 extern char *shell;
 #endif
 
-int 
-ShowDate (void)
+ShowDate()
 {
   time_t now;
   move(3,0);
@@ -47,15 +49,13 @@ ShowDate (void)
    why bother with all that forking and execing when reading posts.
 */
 
-int 
-More (char *filename, int promptend) 
+int More(char *filename, int promptend)
 {
   return (more(filename, promptend));
 }
 
 #ifndef REMOTE_CLIENT
-int 
-SelectEditor (void)
+SelectEditor()
 {
   NAME editorname;
   NAMELIST editorlist = NULL;
@@ -79,8 +79,7 @@ SelectEditor (void)
 }
 #endif
 
-int 
-Edit (char *filename)
+int Edit(char *filename)
 {
   int rc;
 #ifndef REMOTE_CLIENT
@@ -108,15 +107,13 @@ Edit (char *filename)
   }
   return (vedit(filename));
 #else /* REMOTE_CLIENT */
-  char buf[MAXCOMSZ];
   char ans[9];
   int done = 0;
   if (editor == NULL) {
     return(vedit(filename));
   }
-  sprintf(buf, "%s %s", editor, filename);
   while (!done) {    
-    rc = do_exec(buf, NULL);
+    rc = path_exec(editor, filename);
     clear();
     if (rc == -1) {
       prints("Exec of '%s' failed. You might try a different EDITOR.\n");
@@ -141,17 +138,50 @@ Edit (char *filename)
 }
  
 #ifdef REMOTE_CLIENT
-int 
-ShellEscape (void)
+int path_exec(char *arg1, char *arg2)
+{
+  /* Quick and dirty fork/exec using execvp. Adapted from pbbs/stuff.c */
+  int status, pid, w;
+  int saved_alarm;
+  void (*isig)(), (*qsig)();
+  char *arglist[3];
+  arglist[0] = arg1;
+  arglist[1] = arg2;
+  arglist[2] = NULL;
+
+  refresh();
+  reset_tty();
+  saved_alarm = alarm(0);
+
+  if ((pid = fork()) == 0) {
+    execvp(arg1, arglist);
+    exit(-1);
+  }
+  else if (pid == -1) {
+    return -1;
+  }
+  
+  g_child_pid = pid;
+  isig = signal(SIGINT, SIG_IGN);
+  qsig = signal(SIGQUIT, SIG_IGN);
+  w = waitpid(pid, &status, 0);
+  if (saved_alarm) alarm(saved_alarm);
+  signal(SIGINT, isig);
+  signal(SIGQUIT, qsig);
+  g_child_pid = -1;
+  restore_tty();
+  return ((w == -1) ? w : WEXITSTATUS(status));
+}
+
+ShellEscape()
 {
   clear();
-  do_exec(shell, NULL);
+  path_exec(shell, NULL);
   return FULLUPDATE;
 }
 #endif
 
-int 
-Welcome (void)
+Welcome()
 {
   PATH welcfile;
   int rc;
@@ -167,8 +197,7 @@ Welcome (void)
   return FULLUPDATE;
 }
     
-int 
-EditWelcome (void)
+EditWelcome()
 {
   PATH welcfile;
   int rc;
@@ -197,8 +226,7 @@ EditWelcome (void)
   return FULLUPDATE;
 }
 
-int 
-BoardInfo (void)
+BoardInfo()
 {   
   PATH infofile;
   int rc;
@@ -214,8 +242,7 @@ BoardInfo (void)
   return FULLUPDATE;
 }
 
-int 
-GnuInfo (void)
+GnuInfo()
 {   
   PATH gnufile;
   int rc;
@@ -231,8 +258,9 @@ GnuInfo (void)
   return FULLUPDATE;
 }
 
-int
-AnnotateMessageBody (char *dest, char *src)
+#define LINELEN 80
+
+int AnnotateMessageBody(char *dest, char *src)
 {
   char buf[LINELEN], overflow[LINELEN];
   FILE *ofp, *ifp;
@@ -283,8 +311,7 @@ AnnotateMessageBody (char *dest, char *src)
   return 0;
 }
 
-int 
-filecopy (char *dest, char *src)
+int filecopy(char *dest, char *src)
 {
   int ifd, ofd, rc = 0, cc;
   char buf[1024];
@@ -306,8 +333,8 @@ filecopy (char *dest, char *src)
 }
 
 #ifdef REMOTE_CLIENT
-int 
-SaveFile (char *fname)
+SaveFile(fname)
+char *fname;
 {
   char savename[PATHLEN];
   clear();

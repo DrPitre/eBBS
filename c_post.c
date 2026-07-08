@@ -21,10 +21,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "client.h"
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
-int 
-OpenBoard (int *openflags, int newonly, int *resp)
+int
+OpenBoard(int *openflags, int newonly, int *resp)
 {
   int code;
   OPENINFO openinfo;
@@ -35,8 +34,8 @@ OpenBoard (int *openflags, int newonly, int *resp)
   return (newonly ? openinfo.newmsgs : openinfo.totalmsgs);
 }
 
-int 
-CloseBoard (void)
+int
+CloseBoard(void)
 {
   int code;
   code = bbs_close_board();
@@ -51,12 +50,8 @@ CloseBoard (void)
    other == error code from bbs_post
 */
 
-int 
-DoPostSend (
-    char *subject,    /* subject string */
-    char *textfile,   /* file to send: if NULL invoke editor */
-    int doedit       /* edit even if textfile != NULL */
-)
+int
+DoPostSend(char *subject, char *textfile, int doedit)
 {
   int rc = 0;
   struct stat stbuf;
@@ -77,8 +72,8 @@ DoPostSend (
   return rc;
 }            
 
-int 
-GenericPost (int docheck)
+int
+GenericPost(int docheck)
 {
   int rc;
   LONG retcode = FULLUPDATE;
@@ -129,15 +124,15 @@ GenericPost (int docheck)
   return retcode;
 }
 
-int 
-Post (void)
+int
+Post(void)
 {
   return (GenericPost(1));
 }
 
 /*ARGSUSED*/
-int 
-PostMessage (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostMessage(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   if (!BITISSET(openflags, OPEN_POST)) {
     bell();
@@ -147,14 +142,14 @@ PostMessage (HEADER *hptr, int currmsg, int numrecs, int openflags)
 }
 
 /*ARGSUSED*/
-int 
-ReadMenuSelect (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+ReadMenuSelect(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
-  return (SelectBoard(NULL));
+  return (SelectBoard());
 }
 
-int 
-GenericPostReply (HEADER *hptr, char *msgsrc)
+int
+GenericPostReply(HEADER *hptr, char *msgsrc)
 {
   TITLE subject;
   char ans[4];
@@ -215,15 +210,15 @@ GenericPostReply (HEADER *hptr, char *msgsrc)
 }    
 
 /*ARGSUSED*/
-int 
-PostReply (HEADER *hptr, LONG currmsg, LONG numrecs, LONG openflags)
+int
+PostReply(HEADER *hptr, LONG currmsg, LONG numrecs, LONG openflags)
 {
   return (GenericPostReply(hptr, NULL));
 }
 
 /*ARGSUSED*/
-int 
-PostDelete (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostDelete(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[4];
@@ -252,8 +247,8 @@ PostDelete (HEADER *hptr, int currmsg, int numrecs, int openflags)
 }
 
 /*ARGSUSED*/
-int 
-PostDelRange (HEADER *hptr, int currmsg, int numinbox, int openflags)
+int
+PostDelRange(HEADER *hptr, int currmsg, int numinbox, int openflags)
 {
   int code, rc = FULLUPDATE;
   char ans[5];
@@ -310,8 +305,8 @@ PostDelRange (HEADER *hptr, int currmsg, int numinbox, int openflags)
 }
 
 /*ARGSUSED*/
-int 
-PostMark (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostMark(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   SHORT ismarked = BITISSET(hptr->flags, FILE_MARKED);
   if (bbs_mark_message(hptr->fileid, !ismarked) != S_OK) return DONOTHING;
@@ -321,8 +316,8 @@ PostMark (HEADER *hptr, int currmsg, int numrecs, int openflags)
 }            
 
 /*ARGSUSED*/
-int 
-PostMove (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostMove(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   int code, rc = FULLUPDATE;
   NAME bname;
@@ -365,8 +360,8 @@ PostMove (HEADER *hptr, int currmsg, int numrecs, int openflags)
 }
 
 /*ARGSUSED*/
-int 
-PostEdit (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostEdit(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   struct stat stbuf;
   PATH msgfile;
@@ -392,8 +387,8 @@ PostEdit (HEADER *hptr, int currmsg, int numrecs, int openflags)
 }            
 
 /*ARGSUSED*/
-int 
-PostDisplay (HEADER *hptr, int currmsg, int numrecs, int openflags)
+int
+PostDisplay(HEADER *hptr, int currmsg, int numrecs, int openflags)
 {
   char ans[9], promptstr[80];
   PATH msgfile;

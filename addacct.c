@@ -19,24 +19,20 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #include "server.h"
-#include <unistd.h>
 
 extern USERDATA user_params;
 
 extern char *optarg;
 
-int 
-usage (char *prog)
+void usage(char *prog)
 {
   fprintf(stderr, 
 	  "Usage: %s -i userid -p passwd [-u username] [-t termtype]\n", prog);
   fprintf(stderr,
 	  "       [-e email] [-r realname] [-a address] [-d bbs-dir]\n");
-  return 0;
 }
 
-int 
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     char *bbshome = NULL;
     int iflg, pflg, uflg;

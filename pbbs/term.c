@@ -22,13 +22,14 @@
 */
 
 #include <stdio.h>
-#include <strings.h>
+#include <inttypes.h>
 #include <string.h>
-#include <termcap.h>
-#include <unistd.h>
 #include "osdeps.h"
 #if NO_TERMIO
 # include <sgtty.h>
+#elif defined(__APPLE__)
+# include <termios.h>
+# include <unistd.h>
 #else
 # include <termio.h>
 #endif
@@ -37,45 +38,75 @@
 
 struct sgttyb tty_state, tty_new ;
 
-int 
-get_tty (void)
-{   
+int get_tty(void)
+{
     if(gtty(1,&tty_state) < 0) {
         return(-1) ;
     }
     return 1 ;
 }
-  
-int 
-init_tty (void)
+
+void init_tty(void)
 {
     bcopy(&tty_state, &tty_new, sizeof(tty_new)) ;
     tty_new.sg_flags |= RAW ;
     tty_new.sg_flags &= ~(TANDEM|CBREAK|LCASE|ECHO|CRMOD) ;
     stty(1,&tty_new) ;
-    return 0 ;
 }
 
-int 
-reset_tty (void)
+void reset_tty(void)
 {
     stty(1,&tty_state) ;
-    return 0 ;
 }
 
-int 
-restore_tty (void)
+void restore_tty(void)
 {
     stty(1,&tty_new) ;
-    return 0 ;
 }
 
 #else /* ! NO_TERMIO */
 
+extern char *tgetstr(const char *, char **);
+
+#if defined(__APPLE__)
+
+struct termios tty_state, tty_new;
+
+int get_tty(void)
+{
+    if (tcgetattr(STDOUT_FILENO, &tty_state) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+void init_tty(void)
+{
+    memcpy(&tty_new, &tty_state, sizeof(tty_new));
+    tty_new.c_iflag &= IXANY;
+    tty_new.c_oflag &= ~(OPOST | OCRNL);
+    tty_new.c_lflag &= ~(ICANON | ISIG | ECHO);
+    tty_new.c_lflag |= TOSTOP;
+    tty_new.c_cc[VMIN] = 1;
+    tty_new.c_cc[VTIME] = 0;
+    tcsetattr(STDOUT_FILENO, TCSANOW, &tty_new);
+}
+
+void reset_tty(void)
+{
+    tcsetattr(STDOUT_FILENO, TCSANOW, &tty_state);
+}
+
+void restore_tty(void)
+{
+    tcsetattr(STDOUT_FILENO, TCSANOW, &tty_new);
+}
+
+#else /* Linux / System V termio */
+
 struct termio tty_state, tty_new;
 
-int 
-get_tty (void)
+int get_tty(void)
 {
     if(ioctl(1,TCGETA,&tty_state) < 0) {
         return -1;
@@ -90,8 +121,7 @@ get_tty (void)
     return 0;
 }
 
-int 
-init_tty (void)
+void init_tty(void)
 {
     memcpy(&tty_new, &tty_state, sizeof(tty_new));
     tty_new.c_iflag &= IXANY;
@@ -101,27 +131,23 @@ init_tty (void)
     tty_new.c_cc[VMIN] = 1;
     tty_new.c_cc[VTIME] = 0;
     if (ioctl(1,TCSETA,&tty_new) == -1) printf("ioctl failed\n");
-    return 0;
 }
 
-int 
-reset_tty (void)
+void reset_tty(void)
 {
     ioctl(1,TCSETA,&tty_state) ;
-    return 0;
 }
 
-int 
-restore_tty (void)
+void restore_tty(void)
 {
     ioctl(1,TCSETA,&tty_new) ;
-    return 0;
 }
+
+#endif /* __APPLE__ vs Linux */
 
 #endif /* ! NO_TERMIO */
 
-int 
-term_ok (char *term)
+int term_ok(char *term)
 {
    char tbuf[1024];
    if (tgetent(tbuf, term) != 1) return 0;
@@ -166,18 +192,15 @@ int automargins ;
 char *outp ;
 int  *outlp ;
 
-int
-outcf (int ch)
+void outcf(char ch)
 {
     if(*outlp >= TERMCOMSIZE)
-        return 0 ;
+        return ;
     (*outlp)++ ;
     *outp++ = ch ;
-    return ch;
 }
 
-int 
-term_init (char *term)
+int term_init(char *term)
 {
 #ifndef HPUX_TERMCAP
     extern char PC, *UP, *BC ;
@@ -192,6 +215,8 @@ term_init (char *term)
 #ifndef HPUX_TERMCAP
 # if NO_TERMIO
     ospeed = tty_state.sg_ospeed ;
+# elif defined(__APPLE__)
+    ospeed = cfgetospeed(&tty_state) ;
 # else
     ospeed = tty_state.c_cflag & CBAUD ;
 # endif
@@ -278,11 +303,9 @@ term_init (char *term)
     return 0;
 }
 
-int
-do_move(int destcol, int destline, int (*outc)(int))
+void do_move(int destcol, int destline, int (*outc)(int))
 {
     tputs(tgoto(cm,destcol,destline), 1, outc) ;
-    return 0 ;
 }
 
 

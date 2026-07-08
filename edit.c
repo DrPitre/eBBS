@@ -38,18 +38,15 @@ typedef struct _EDITSTRUCT {
   PATH envp;
 } EDITSTRUCT;
 
-int
-editent_to_es (char *rec, void *esarg)
+int editent_to_es(char *rec, EDITSTRUCT *es)
 {
-  EDITSTRUCT *es = (EDITSTRUCT *)esarg;
   rec = _extract_quoted(rec, es->name, sizeof(es->name));
   rec = _extract_quoted(rec, es->bin, sizeof(es->bin));
   rec = _extract_quoted(rec, es->envp, sizeof(es->envp));
   return S_OK;
 }
 
-int 
-local_bbs_get_editor (char *name, char *path, char *envp)
+int local_bbs_get_editor(char *name, char *path, char *envp)
 {
   int rc;
   EDITSTRUCT es;
@@ -64,10 +61,8 @@ local_bbs_get_editor (char *name, char *path, char *envp)
 }
 
 /*ARGSUSED*/
-int
-_fill_editornames (int indx, char *rec, void *lcarg)
+int _fill_editornames(int indx, char *rec, struct listcomplete *lc)
 {
-  struct listcomplete *lc = (struct listcomplete *)lcarg;
   EDITSTRUCT es;
   editent_to_es(rec, &es);
   if (!strncasecmp(es.name, lc->str, strlen(lc->str)))
@@ -76,8 +71,7 @@ _fill_editornames (int indx, char *rec, void *lcarg)
   return S_OK;
 }
 
-int 
-local_bbs_enum_editors (NAMELIST *list, char *complete)
+int local_bbs_enum_editors(NAMELIST *list, char *complete)
 {
   struct listcomplete lc;
   create_namelist(list);

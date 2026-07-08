@@ -20,18 +20,16 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "server.h"
 #include <ctype.h>
-#include <unistd.h>
 
 #define MAILERFILE "etc/mailers"
 
 /* For the bbs name and tempfile */
 extern SERVERDATA server;
 
-int 
-is_valid_address (char *addr)
+int is_valid_address(char *addr)
 {
   if (*addr == '\0') return 0;   /* blank */
-  if (*addr == '-') return 0;    /* cannot begin with '-' */
+  if (*addr == '-' || *addr == '+') return 0;  /* cannot begin with + or - */
   while (*addr) {
     if (!isalnum(*addr) && strchr(".%!@:;-_+[]", *addr) == NULL)
       return 0;
@@ -40,17 +38,16 @@ is_valid_address (char *addr)
   return 1;
 }
 
-int
-spec_to_mailer (char *rec, void *mailer)
+int spec_to_mailer(char *rec, char *mailer)
 {
   NAME prefix;
   rec = _extract_quoted(rec, prefix, sizeof(prefix));
-  rec = _extract_quoted(rec, (char *)mailer, sizeof(ADDR));
+  rec = _extract_quoted(rec, mailer, sizeof(ADDR));
   return S_OK;
 }
  
 char *
-lookup_mailer (char *addr, char *mailer)
+lookup_mailer(char *addr, char *mailer)
 {
   char *colon;
   int rc;
@@ -62,8 +59,7 @@ lookup_mailer (char *addr, char *mailer)
   return colon+1;  
 }
 
-int 
-ok_for_from_header (char *str)
+int ok_for_from_header(char *str)
 {
   for (; str && *str; str++)
     if (strchr("<>;\"'\\|[]{}()%@!", *str)) return 0;
@@ -71,8 +67,8 @@ ok_for_from_header (char *str)
   return 1;
 }
 
-LONG 
-mail_file_to_outside (char *fname, char *subject, char *addrspec, int is_forward, int is_binary)
+LONG
+mail_file_to_outside(char *fname, char *subject, char *addrspec, int is_forward, int is_binary)
 {
   FILE *fp;
   ACCOUNT acct;
@@ -96,6 +92,8 @@ mail_file_to_outside (char *fname, char *subject, char *addrspec, int is_forward
   }
 
   if ((address = lookup_mailer(addrbuf, mailer)) == NULL) return S_BADADDRESS;
+
+  if (!is_valid_address(address)) return S_BADADDRESS;
 
   if ((fp = fopen(server.tempfile, "w")) == NULL) return S_SYSERR;
 
@@ -136,14 +134,14 @@ mail_file_to_outside (char *fname, char *subject, char *addrspec, int is_forward
 
   bbslog(3, "FORWARD '%s' to %s by %s\n", subject, address, acct.userid);
 
-  rc = execute(execbuf, NULL, server.tempfile, "/dev/null", "/dev/null", NULL, 0);
+  rc = execute(execbuf, NULL, server.tempfile, "/dev/null", "/dev/null", NULL);
 
   unlink(server.tempfile);
   return (rc == 0 ? S_OK : S_SYSERR);
 }
 
-LONG 
-forward_file_to_outside (char *fname, char *title, int is_binary)
+LONG
+forward_file_to_outside(char *fname, char *title, int is_binary)
 {
   LONG rc;
   

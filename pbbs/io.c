@@ -22,16 +22,15 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "osdeps.h"
 #include "io.h"
-#include "screen.h"
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <errno.h>
-#include <unistd.h>
 
 #if USES_SYS_SELECT_H
 # include <sys/select.h>
@@ -51,61 +50,52 @@ unsigned char inbuf[IBUFSIZE] ;
 int ibufsize = 0 ;
 int icurrchar = 0 ;
 
-int 
-oflush (void)
+void oflush(void)
 {
     if(obufsize)
       write(1,outbuf,obufsize) ;
     obufsize = 0 ;
-    return 0 ;
 }
 
-int ochar(int c);
-
-int
-output (char *s, int len)
-{
-    int i;
-    for(i = 0; i < len; i++)
-      ochar((unsigned char)s[i]);
-    return 0 ;
-}
-
-int
-ochar (int c)
+void ochar(unsigned char c)
 {
     if(obufsize > OBUFSIZE-1) {  /* doin a oflush */
         write(1,outbuf,obufsize) ;
         obufsize = 0 ;
     }
      outbuf[obufsize++] = conv_table[c][1] ;
-    return c ;
+}
+
+void output(char *s, int len)
+{
+    int i;
+    for(i = 0; i < len; i++)
+      ochar(s[i]);
 }
 
 int i_newfd = 0;
 struct timeval i_to, *i_top = NULL ;
-int (*flushf)(void) = NULL ;
+int (*flushf)() = NULL ;
 
 #if 0
 int serversock = 0;
 int in_child = 0;
 int (*sockf)() = NULL;
 
-int 
-add_serversock (int fd)
+add_serversock(fd)
+int fd;
 {
     serversock = fd;
 }
 
-int 
-add_servhandler (int (*func)(void))
+add_servhandler(func)
+int (*func)();
 {
     sockf = func;
 }
 #endif
 
-int 
-add_io (int fd, int timeout)
+void add_io(int fd, int timeout)
 {
     i_newfd = fd ;
     if(timeout) {
@@ -113,24 +103,20 @@ add_io (int fd, int timeout)
         i_to.tv_usec = 0 ;
         i_top = &i_to ;
     } else i_top = NULL ;
-    return 0 ;
 }
 
-int
-add_flush(int (*flushfunc)(void))
+void add_flush(int (*flushfunc)())
 {
     flushf = flushfunc ;
-    return 0 ;
 }
 
-int 
-num_in_buf (void)
+num_in_buf()
 {
     return icurrchar - ibufsize ;
 }
 
-int 
-igetch (void)
+int
+igetch()
 {
 igetagain:
     if(ibufsize == icurrchar) {
@@ -232,8 +218,7 @@ selectagain:
     return conv_table[inbuf[icurrchar++]][0] ;
 }
 
-int 
-getdata (int line, int col, char *prompt, char *buf, int len, int echo, int cancel)
+int getdata(int line, int col, char *prompt, char *buf, int len, int echo, int cancel)
 {
     int ch ;
     int clen = 0 ;

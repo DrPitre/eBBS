@@ -21,9 +21,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "server.h"
 #include <fcntl.h>
 #include <signal.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 
 #define MAXCOMSZ   (1024) /* Maximum length of do_exec command */
 #define MAXFILELEN (80)   /* Maximum length of the executable file name */
@@ -33,8 +31,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define LOOKLAST   (1)
 #define QUOTEMODE  (2)
 
-int 
-_set_io (char *fname, int fd, int append)
+int _set_io(char *fname, int fd, int append)
 {
   int newfd;
   int mode;
@@ -62,8 +59,7 @@ _set_io (char *fname, int fd, int append)
    This one is suitable for the server, doesn't try to set the screen
 */
 
-int 
-execute (char *com, char *wd, char *infile, char *outfile, char *errfile, char **envp, int append)
+int execute(char *com, char *wd, char *infile, char *outfile, char *errfile, char **envp, int append)
 {
   char path[MAXFILELEN] ;
   char pcom[MAXCOMSZ] ;

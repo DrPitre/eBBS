@@ -29,8 +29,7 @@ struct disp_list {
 };
 
 /*ARGSUSED*/
-int 
-display_list_element (int indx, char *name, void *arg)
+int display_list_element(int indx, char *name, void *arg)
 {
   struct disp_list *info = arg;
   move(info->y, info->x);
@@ -42,8 +41,7 @@ display_list_element (int indx, char *name, void *arg)
   return 0;
 }
   
-int 
-display_list (char *header, NAMELIST list)
+void display_list(char *header, NAMELIST list)
 {
   struct disp_list info;
   info.x = 0;
@@ -52,11 +50,9 @@ display_list (char *header, NAMELIST list)
   clrtobot();
   prints("%s\n", header);
   apply_namelist(list, display_list_element, &info);
-  return 0;
 }
 
-int 
-SetOverrides (void)
+SetOverrides()
 {
   int rc, done = 0, change = 0;
   char ans[7];
@@ -113,8 +109,7 @@ SetOverrides (void)
   return FULLUPDATE;
 }
 
-int 
-SetBoardMgrs (void)
+SetBoardMgrs()
 {
   int rc, done = 0, change = 0;
   char ans[7];

@@ -29,8 +29,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <fcntl.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 #ifdef NeXT
 # define S_ISDIR(mode)   (((mode) & (_S_IFMT)) == (_S_IFDIR))
 #endif
@@ -38,8 +36,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 /* Miscellaneous useful functions */
 
 #ifdef NO_STRCASECMP
-int 
-strcasecmp (register char *s1, register char *s2)
+strcasecmp(s1,s2)
+register char *s1,*s2 ;
 {
   for(;;s1++,s2++) {
     if(*s1=='\0' || *s2 == '\0')
@@ -51,8 +49,9 @@ strcasecmp (register char *s1, register char *s2)
   return 1;
 }
 
-int 
-strncasecmp (register char *s1, register char *s2, register int n)
+strncasecmp(s1,s2,n)
+register char *s1,*s2 ;
+register int n ;
 {
   for(;n;s1++,s2++,n--) {
     if(*s1=='\0' && *s2 == '\0')
@@ -64,8 +63,8 @@ strncasecmp (register char *s1, register char *s2, register int n)
 }
 #endif
 
-void 
-strip_trailing_space (char *str)
+void
+strip_trailing_space(char *str)
 {
   char *eos;
   if (str == NULL || *str == '\0') return;
@@ -74,16 +73,16 @@ strip_trailing_space (char *str)
     *eos-- = '\0';
 }
 
-int 
-is_directory (char *fname)
+int
+is_directory(char *fname)
 {
   struct stat stbuf;
   if (stat(fname, &stbuf) == 0 && S_ISDIR(stbuf.st_mode)) return 1;
   return 0;
 }
 
-int 
-recursive_rmdir (char *dir)
+int
+recursive_rmdir(char *dir)
 {
   PATH fname;
   DIR *dp;
@@ -110,7 +109,7 @@ recursive_rmdir (char *dir)
    with a FREAKING NEWLINE on the end. */
 
 char *
-Ctime (time_t *t)
+Ctime(time_t *t)
 {
   static char ctbuf[40];
   char *ct;
@@ -119,8 +118,8 @@ Ctime (time_t *t)
   return ctbuf;
 }
 
-int 
-is_valid_userid (char *userid)
+int
+is_valid_userid(char *userid)
 {
   int len = strlen(userid);
   if (len < 2) return 0;
@@ -136,15 +135,15 @@ is_valid_userid (char *userid)
   return 1;
 }
     
-int 
-is_valid_password (char *passwd)
+int
+is_valid_password(char *passwd)
 {
   if (!passwd || !*passwd) return 0;
   return 1;
 }
 
-int 
-is_valid_boardname (char *bname)
+int
+is_valid_boardname(char *bname)
 {
   int len = strlen(bname);
   if (len < 1) return 0;
@@ -161,8 +160,8 @@ is_valid_boardname (char *bname)
    fd is left open by this function.
 */
 
-int 
-append_file (int fd, char *fname)
+int
+append_file(int fd, char *fname)
 {
   char buf[4096];
   int bytes;
@@ -176,8 +175,8 @@ append_file (int fd, char *fname)
   return 0;
 }
 
-int 
-copy_file (char *src, char *dest, int fmode, int append)
+int
+copy_file(char *src, char *dest, int fmode, int append)
 {
   int omode, fd, rc;
   omode = (append ? O_WRONLY|O_APPEND|O_CREAT : O_WRONLY|O_TRUNC|O_CREAT);
@@ -187,8 +186,8 @@ copy_file (char *src, char *dest, int fmode, int append)
   return rc;
 }
 
-LONG 
-hex2LONG (char *str)
+LONG
+hex2LONG(char *str)
 {
   char c;  
   int i;
@@ -203,8 +202,8 @@ hex2LONG (char *str)
   return val;
 }        
 
-SHORT 
-hex2SHORT (char *str)
+SHORT
+hex2SHORT(char *str)
 {
   char c;  
   int i;
@@ -220,7 +219,7 @@ hex2SHORT (char *str)
 }        
 
 char *
-LONGcpy (char *str, LONG lval)
+LONGcpy(char *str, LONG lval)
 {
   char nbuf[9];
   sprintf(nbuf, "%08x", lval);
@@ -247,8 +246,8 @@ char *binary_exts [] = {
    NULL
 };
 
-int 
-is_text_file (char *path)
+int
+is_text_file(char *path)
 {
   int fd, cc, i;
   char buf[1024];

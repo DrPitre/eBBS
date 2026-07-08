@@ -20,10 +20,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "client.h"
 #include <signal.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/socket.h>
 
 #define TALK_MAX_COLS 128
 
@@ -49,8 +45,8 @@ struct usertopid {
   int count;
 };
 
-void 
-page_handler (int sig)
+void
+page_handler(int sig)
 {
   bell();
   bell();
@@ -59,18 +55,18 @@ page_handler (int sig)
   signal(sig, page_handler);  
 }
 
-int 
-PagePending (void)
+int
+PagePending(void)
 {
   return g_page_pending;
 }
 
 /* We need this function to handle page requests in talk and chat mode.
-   We only want to notify once, but need to keep the page request 
+   We only want to notify once, but need to keep the page request
    around in case we want to go off and answer it. */
 
-int 
-NewPagePending (void)
+int
+NewPagePending(void)
 {
   if (g_page_need_notify) {
     g_page_need_notify = 0;
@@ -79,19 +75,17 @@ NewPagePending (void)
   return 0;
 }
 
-int 
-PrintLoginEntry (int num, USEREC *urec)
+void
+PrintLoginEntry(int num, USEREC *urec)
 {
-  prints("%2d %-12s  %-24s %-30s %s\n", num, urec->userid,
+  prints("%2d %-12s  %-24s %-30s %s\n", num, urec->userid, 
 	 urec->username, urec->fromhost, ModeToString(urec->mode));
-  return 0;
 }
 
 /*ARGSUSED*/
 int
-PickLogin (int indx, USEREC *urec, void *infoarg)
+PickLogin(int indx, USEREC *urec, struct usertopid *info)
 {
-  struct usertopid *info = (struct usertopid *)infoarg;
   if (info->count >= MAX_HANDLED_LOGINS) return ENUM_QUIT;
   info->pids[info->count++] = urec->pid;
   if (info->count == 1) {
@@ -106,8 +100,8 @@ PickLogin (int indx, USEREC *urec, void *infoarg)
   return S_OK;
 }  
 
-LONG 
-UseridToPid (char *userid)
+LONG
+UseridToPid(char *userid)
 {
   struct usertopid u2p;
   int x, y, indx;
@@ -124,8 +118,8 @@ UseridToPid (char *userid)
   return (u2p.pids[indx-1]);
 }
 
-int 
-Kick (void)
+int
+Kick(void)
 {
   NAME namebuf;
   LONG pid;
@@ -165,8 +159,8 @@ Kick (void)
   return FULLUPDATE;
 }
 
-void 
-TalkAdvanceLine (struct talkwin *ts)
+void
+TalkAdvanceLine(struct talkwin *ts)
 {
   if (++ts->currln > ts->lastln) ts->currln = ts->firstln;
   move((ts->currln == ts->lastln ? ts->firstln : ts->currln+1), 0);
@@ -175,8 +169,8 @@ TalkAdvanceLine (struct talkwin *ts)
   clrtoeol();
 }
 
-int 
-DoTalkChar (char ch, struct talkwin *ts)
+int
+DoTalkChar(char ch, struct talkwin *ts)
 {
   /* This function handles backspaces, newlines, and printables. */
   move(ts->currln, ts->currcol);
@@ -226,15 +220,15 @@ DoTalkChar (char ch, struct talkwin *ts)
   return 0;
 }
 
-int 
-DoTalkString (char *s, struct talkwin *tw)
+int
+DoTalkString(char *s, struct talkwin *tw)
 {
   for (; s && *s; s++) DoTalkChar(*s, tw);
   return 0;
 }
 
-int 
-talk_show_page_request (int ln)
+int
+talk_show_page_request(int ln)
 {
   USEREC urec;
   char buf[80];
@@ -251,9 +245,8 @@ talk_show_page_request (int ln)
 }
 
 int
-_talk_enum_users (int count, USEREC *urec, void *twarg)
+_talk_enum_users(int count, USEREC *urec, struct talkwin *tw)
 {
-  struct talkwin *tw = (struct talkwin *)twarg;
   char buf[NAMELEN+10];
   sprintf(buf, ",%s%s [%c]", BITISSET(urec->flags, FLG_CLOAK) ? " #" : " ",
           urec->userid, ModeToChar(urec->mode));
@@ -261,8 +254,8 @@ _talk_enum_users (int count, USEREC *urec, void *twarg)
   return S_OK;
 }
     
-int 
-talk_user_list (struct talkwin *tw)
+int
+talk_user_list(struct talkwin *tw)
 {
   DoTalkString("\n*** Users currently online ***\n", tw);
   bbs_enum_users(10, 0, NULL, _talk_enum_users, tw);
@@ -270,8 +263,8 @@ talk_user_list (struct talkwin *tw)
   return 0;
 }    
 
-int 
-DrawDivider (int ln)
+void
+DrawDivider(int ln)
 {
   int i;
   move(ln, 0);
@@ -279,11 +272,10 @@ DrawDivider (int ln)
     addch('-');
   }
   refresh();
-  return 0;
 }
 
-int 
-DoTalk (int sock)
+int
+DoTalk(int sock)
 {
   int i, ch, cc;
   int divider;
@@ -362,8 +354,8 @@ DoTalk (int sock)
   return 0;
 }
 
-int 
-Talk (void)
+int
+Talk(void)
 {
   NAME namebuf;
   LONG pid;
@@ -410,8 +402,8 @@ Talk (void)
   return FULLUPDATE;
 }
 
-int 
-Answer (void)
+int
+Answer(void)
 {
   USEREC urec;
   LONG addr, sock;

@@ -32,7 +32,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
-#include <unistd.h>
 
 #ifndef RELIABLE_SELECT_FOR_WRITE
 # include <fcntl.h>
@@ -94,7 +93,7 @@ struct chatcmd {
   char *cmdstr;
   int (*cmdfunc)(int, char *);
   int exact;
-};
+};  
 
 int bbs_max_users;          /* Passed in at exec time as argv[1] */
 int sock = -1;              /* the socket for listening */
@@ -110,8 +109,7 @@ NAMELIST manager_list;      /* list of chat super-operators */
 NAMELIST restricted_list;   /* list of restricted access accounts */
 int no_punct_in_chatids;    /* are punctuation characters allowed? */
 
-int 
-is_valid_chatid (char *id)
+int is_valid_chatid(char *id)
 {
   int i;
   if (*id == '\0') return 0;
@@ -125,8 +123,7 @@ is_valid_chatid (char *id)
   return 1;
 }
 
-int 
-is_valid_roomname (char *roomid)
+int is_valid_roomname(char *roomid)
 {
   int i;
   if (*roomid == '\0') return 0;
@@ -138,7 +135,7 @@ is_valid_roomname (char *roomid)
 }
 
 char *
-nextword (char **str)
+nextword(char **str)
 {
   char *p;
   while (isspace(**str)) (*str)++;    
@@ -151,8 +148,7 @@ nextword (char **str)
   return p;
 }
 
-int 
-chatid_to_indx (char *chatid)
+int chatid_to_indx(char *chatid)
 {
   register int i;
   for (i=0; i<bbs_max_users; i++) {
@@ -162,8 +158,7 @@ chatid_to_indx (char *chatid)
   return -1;
 }
 
-int 
-fuzzy_chatid_to_indx (char *chatid)
+int fuzzy_chatid_to_indx(char *chatid)
 {
   register int i, indx = -1;
   int len = strlen(chatid);
@@ -178,8 +173,7 @@ fuzzy_chatid_to_indx (char *chatid)
   return indx;
 }
 
-int 
-userid_to_indx (char *userid)
+int userid_to_indx(char *userid)
 {
   register int i;
   for (i=0; i<bbs_max_users; i++) {
@@ -189,8 +183,7 @@ userid_to_indx (char *userid)
   return -1;
 }
 
-int 
-roomid_to_indx (char *roomid)
+int roomid_to_indx(char *roomid)
 {
   register int i;
   for (i=0; i<bbs_max_users; i++) {
@@ -200,8 +193,7 @@ roomid_to_indx (char *roomid)
   return -1;
 }
 
-int
-do_send(fd_set *writefds, char *str)
+void do_send(fd_set *writefds, char *str)
 {
   register int i;
   int len = strlen(str);
@@ -214,11 +206,9 @@ do_send(fd_set *writefds, char *str)
     for (i=0; i<nfds; i++)
       if (FD_ISSET(i, writefds)) send(i, str, len+1, 0);
   }
-  return 0;
-}
+}          
 
-int 
-send_to_room (int room, char *str, int fromunum)
+int send_to_room(int room, char *str, int fromunum)
 {
   int i, checkign, rc = 0;
   fd_set writefds;
@@ -236,8 +226,7 @@ send_to_room (int room, char *str, int fromunum)
   return rc;
 }  
 
-int 
-send_to_unum (int unum, char *str, int fromunum)
+int send_to_unum(int unum, char *str, int fromunum)
 {
   fd_set writefds;
   if (fromunum == -1 || users[fromunum].ignoring == NULL ||
@@ -250,8 +239,7 @@ send_to_unum (int unum, char *str, int fromunum)
   else return 0;
 }  
 
-int 
-exit_room (int unum, int disp, char *msg)
+void exit_room(int unum, int disp, char *msg)
 {
   int oldrnum = users[unum].room;
   if (oldrnum != -1) {
@@ -282,11 +270,9 @@ exit_room (int unum, int disp, char *msg)
   }
   users[unum].flags &= ~FLG_CHATOP;
   users[unum].room = -1;
-  return 0;
 }
 
-int 
-enter_room (int unum, char *room, char *msg)
+int enter_room(int unum, char *room, char *msg)
 {
   int rnum = roomid_to_indx(room);
   int op = 0;
@@ -333,8 +319,7 @@ enter_room (int unum, char *room, char *msg)
   return 0;
 }
 
-int 
-logout_user (int unum)
+void logout_user(int unum)
 {
   USERDATA udata;
   int i, sockfd = users[unum].sockfd;
@@ -370,11 +355,9 @@ logout_user (int unum)
     }
   }
   num_conns--;
-  return 0;
 }
 
-int 
-display_motd (int unum)
+int display_motd(int unum)
 {
   FILE *fp = fopen(CHAT_MOTD_FILE, "r");
   if (fp != NULL) {
@@ -389,8 +372,7 @@ display_motd (int unum)
   return 0;
 }
 
-int 
-print_user_counts (int unum)
+int print_user_counts(int unum)
 {
   int i, c, userc = 0, suserc = 0, roomc = 0;
   for (i=0; i<bbs_max_users; i++) {
@@ -414,8 +396,7 @@ print_user_counts (int unum)
   return 0;
 }    
 
-int 
-login_user (int unum, char *msg)
+int login_user(int unum, char *msg)
 {
   int i, utent, fd = users[unum].sockfd;
   char accessbytes[MAX_CLNTCMDS];
@@ -500,8 +481,7 @@ login_user (int unum, char *msg)
 }  
 
 /*ARGSUSED*/
-int 
-chat_list_rooms (int unum, char *msg)
+int chat_list_rooms(int unum, char *msg)
 {
   int i, occupants;
   if (RESTRICTED(unum)) {
@@ -527,8 +507,7 @@ chat_list_rooms (int unum, char *msg)
   return 0;
 }
 
-int 
-chat_do_user_list (int unum, char *msg, int whichroom)
+int chat_do_user_list(int unum, char *msg, int whichroom)
 {
   int start, stop, curr = 0;
   int i, rnum, myroom = users[unum].room;
@@ -561,8 +540,7 @@ chat_do_user_list (int unum, char *msg, int whichroom)
   return 0;
 }
 
-int 
-chat_list_by_room (int unum, char *msg)
+int chat_list_by_room(int unum, char *msg)
 {
   int whichroom;
   char *roomstr = nextword(&msg);
@@ -581,14 +559,12 @@ chat_list_by_room (int unum, char *msg)
   return (chat_do_user_list(unum, msg, whichroom));
 }
 
-int 
-chat_list_users (int unum, char *msg)
+int chat_list_users(int unum, char *msg)
 {
   return (chat_do_user_list(unum, msg, -1));
 }
 
-int 
-chat_map_chatids (int unum)
+int chat_map_chatids(int unum)
 {
   int i, c, myroom, rnum;
   myroom = users[unum].room;
@@ -616,8 +592,7 @@ chat_map_chatids (int unum)
   return 0;    
 }
 
-int 
-chat_query_chatid (int unum, char *msg)
+int chat_query_chatid(int unum, char *msg)
 {
   USERDATA udata;
   int recunum;
@@ -653,8 +628,7 @@ chat_query_chatid (int unum, char *msg)
   return 0;
 }
 
-int 
-chat_setroom (int unum, char *msg)
+int chat_setroom(int unum, char *msg)
 {
   char *modestr = nextword(&msg);
   int rnum = users[unum].room;
@@ -700,8 +674,7 @@ chat_setroom (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_nick (int unum, char *msg)
+int chat_nick(int unum, char *msg)
 {
   char *chatid = nextword(&msg);
   int othernum;
@@ -725,8 +698,7 @@ chat_nick (int unum, char *msg)
   return 0;
 }
 
-int 
-chat_private (int unum, char *msg)
+int chat_private(int unum, char *msg)
 {
   char *recipient = nextword(&msg);
   int recunum = fuzzy_chatid_to_indx(recipient);
@@ -753,8 +725,7 @@ chat_private (int unum, char *msg)
   return 0;  
 }  
 
-int 
-put_chatid (int unum, char *str)
+void put_chatid(int unum, char *str)
 {
   int i;
   char *chatid = users[unum].chatid;
@@ -762,11 +733,9 @@ put_chatid (int unum, char *str)
   for (i=0; chatid[i]; i++) str[i] = chatid[i];
   str[i] = ':';
   str[10] = '\0';
-  return 0;
 }
 
-int 
-chat_allmsg (int unum, char *msg)
+int chat_allmsg(int unum, char *msg)
 {
   if (*msg) {
     put_chatid(unum, genbuf);
@@ -777,8 +746,7 @@ chat_allmsg (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_emote (int unum, char *msg)
+int chat_emote(int unum, char *msg)
 {
   if (*msg) {
     strcpy(genbuf, users[unum].chatid);
@@ -791,8 +759,7 @@ chat_emote (int unum, char *msg)
 }  
 
 /*ARGSUSED*/
-int 
-chat_time (int unum, char *msg)
+int chat_time(int unum, char *msg)
 {
   time_t now;
   time(&now);
@@ -803,8 +770,7 @@ chat_time (int unum, char *msg)
 
 #if EXTRA_CHAT_STUFF
 
-int 
-diceroll (int die)
+int diceroll(int die)
 {
   int r;
   int max = (RAND_MAX / die) * die - 1;
@@ -812,8 +778,7 @@ diceroll (int die)
   return (r % die + 1);
 }
 
-int 
-chat_roll_dice (int unum, char *msg)
+int chat_roll_dice(int unum, char *msg)
 {
   static int seeded;
   int ndice = 2;
@@ -863,8 +828,7 @@ chat_roll_dice (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_think (int unum, char *msg)
+int chat_think(int unum, char *msg)
 {
   if (*msg) {
     strcpy(genbuf, users[unum].chatid);
@@ -878,8 +842,7 @@ chat_think (int unum, char *msg)
  
 #endif  /* EXTRA_CHAT_STUFF */
 
-int 
-chat_join (int unum, char *msg)
+int chat_join(int unum, char *msg)
 {
   char *roomid = nextword(&msg);
   if (RESTRICTED(unum)) {
@@ -899,8 +862,7 @@ chat_join (int unum, char *msg)
   return 0;
 }  
 
-int 
-chat_kick (int unum, char *msg)
+int chat_kick(int unum, char *msg)
 {
   char *twit = nextword(&msg);
   int rnum = users[unum].room;
@@ -928,8 +890,7 @@ chat_kick (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_makeop (int unum, char *msg)
+int chat_makeop(int unum, char *msg)
 {
   char *newop = nextword(&msg);
   int rnum = users[unum].room;
@@ -962,8 +923,7 @@ chat_makeop (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_invite (int unum, char *msg)
+int chat_invite(int unum, char *msg)
 {
   char *invitee = nextword(&msg);
   int rnum = users[unum].room;
@@ -992,8 +952,7 @@ chat_invite (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_broadcast (int unum, char *msg)
+int chat_broadcast(int unum, char *msg)
 {
   if (!MANAGER(unum)) {
     send_to_unum(unum, "*** You can't do that\n", -1);
@@ -1012,17 +971,14 @@ chat_broadcast (int unum, char *msg)
 }  
 
 /*ARGSUSED*/
-int
-_show_ignores (int indx, char *ignoree, void *unumarg)
+int _show_ignores(int indx, char *ignoree, int *unum)
 {
-  int *unum = (int *)unumarg;
   sprintf(genbuf, "*** You are ignoring %s\n", ignoree);
   send_to_unum(*unum, genbuf, -1);
   return 0;
 }
 
-int 
-_set_ignores (char *ignoree, int unum, int status)
+void _set_ignores(char *ignoree, int unum, int status)
 {
   int inum;
   for (inum = 0; inum < bbs_max_users; inum++) {
@@ -1034,11 +990,9 @@ _set_ignores (char *ignoree, int unum, int status)
 	users[inum].ignoring[unum] = status;
     }
   }
-  return 0;
 }
 
-int 
-chat_ignore (int unum, char *msg)
+int chat_ignore(int unum, char *msg)
 {
   if (*msg == '\0') {
     if (users[unum].ignorelist == NULL)
@@ -1077,8 +1031,7 @@ chat_ignore (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_unignore (int unum, char *msg)
+int chat_unignore(int unum, char *msg)
 {
   if (*msg == '\0') {
     send_to_unum(unum, "*** Must specify a userid\n", -1);
@@ -1099,8 +1052,7 @@ chat_unignore (int unum, char *msg)
   return 0;  
 }  
 
-int 
-chat_goodbye (int unum, char *msg)
+int chat_goodbye(int unum, char *msg)
 {
   exit_room(unum, EXIT_LOGOUT, msg);
   return 0;  
@@ -1134,8 +1086,7 @@ struct chatcmd cmdlist[] =
   NULL, NULL, 0
 };
 
-int 
-command_execute (int unum)
+int command_execute(int unum)
 {
   char *msg = users[unum].ibuf;
   char *cmd;
@@ -1179,8 +1130,7 @@ command_execute (int unum)
   return 0;
 }
 
-int 
-process_chat_command (int unum)
+int process_chat_command(int unum)
 {
   register int i;
   int sd, rc, ibufsize;
@@ -1218,8 +1168,7 @@ process_chat_command (int unum)
 }
 
 /*ARGSUSED*/
-int 
-exit_chatd (int rc, char *str)
+void exit_chatd(int rc, char *str)
 {
   int i;
 #ifdef DEBUG
@@ -1238,8 +1187,8 @@ exit_chatd (int rc, char *str)
   exit(rc);
 }
 
-void 
-sig_catcher (int sig)
+void
+sig_catcher(int sig)
 {
   char msg[80];
   sprintf(msg, "shutting down due to signal %d\n", sig);
@@ -1247,8 +1196,7 @@ sig_catcher (int sig)
   exit_chatd(1, msg);
 }  
 
-int 
-_write_daemoninfo (char *fname, unsigned short number)
+void _write_daemoninfo(char *fname, unsigned short number)
 {
   FILE *fp;
   if ((fp = fopen(fname, "w")) == NULL) {
@@ -1258,11 +1206,9 @@ _write_daemoninfo (char *fname, unsigned short number)
   }
   fprintf(fp, "%04x\n", number);
   fclose(fp);
-  return 0;
 }
 
-int 
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   struct sockaddr_in sin;
   register int i;

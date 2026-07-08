@@ -22,14 +22,13 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
+#include <string.h>
 #include "osdeps.h"
 #include "io.h"
-#include "screen.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ctype.h>
-#include <string.h>
 
 int
 readln(FILE *fp, char *buf)
@@ -75,8 +74,8 @@ readln(FILE *fp, char *buf)
     }
 }
 
-int 
-more (char *filename, int promptend)
+int
+more(char *filename, int promptend)
 {
     FILE *fp ;
     int ch ;

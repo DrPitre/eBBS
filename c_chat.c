@@ -19,8 +19,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include "client.h"
 #include <ctype.h>
-#include <stdlib.h>
-#include <sys/socket.h>
 
 #define CHAT_PROMPT  "-->"
 #define CHAT_HELP_FILE "etc/chathlp.txt"
@@ -33,8 +31,7 @@ int g_currline;
 int g_echatwin;
 int g_you_have_mail;
 
-int 
-print_chatid (char *chatid)
+int print_chatid(char *chatid)
 {
   char buf[CHATID_MAX+2];
   int i;
@@ -49,8 +46,7 @@ print_chatid (char *chatid)
   return 0;
 }
 
-int 
-printchatline (char *str)
+void printchatline(char *str)
 {
   int linelen = t_columns-1, len = strlen(str);
 #if COLOR
@@ -109,11 +105,9 @@ printchatline (char *str)
     standend();
     clrtoeol();
   }
-  return 0;
 }
 
-int 
-chat_help (char *helpfile)
+int chat_help(char *helpfile)
 {
   FILE *fp;
   char buf[84];
@@ -130,8 +124,7 @@ chat_help (char *helpfile)
   return 0;
 }
 
-int 
-chat_resetscreen (char *chatid)
+int chat_resetscreen(char *chatid)
 {
   int i;
   char buf[80];
@@ -154,11 +147,8 @@ struct _chatlist {
   char buf[80];
 };
 
-int
-chat_list_users_func(int indx, USEREC *urec, void *clarg)
+int chat_list_users_func(int indx, USEREC *urec, struct _chatlist *cl)
 {
-  struct _chatlist *cl = (struct _chatlist *)clarg;
-
   indx++;    /* Start counting at one, not zero. */
   if (indx < cl->start) return S_OK;
   else if (cl->stop && (indx > cl->stop)) return ENUM_QUIT;
@@ -187,8 +177,7 @@ chat_list_users_func(int indx, USEREC *urec, void *clarg)
   return S_OK;
 }
 
-int 
-chat_list_users (char *cbuf, int verbose)
+int chat_list_users(char *cbuf, int verbose)
 {
   struct _chatlist cl;
   extern char global_modechar_key[];
@@ -224,10 +213,9 @@ chat_list_users (char *cbuf, int verbose)
   return 0;
 }
 
-extern int _query_if_logged_in __P((int, USEREC *, void *));
+extern int _query_if_logged_in __P((int, USEREC *, int *));
 
-int 
-chat_query_user (char *cbuf)
+int chat_query_user(char *cbuf)
 {
   ACCOUNT acct;
   char buf[80];
@@ -257,7 +245,7 @@ chat_query_user (char *cbuf)
   else sprintf(buf, "*** %s from %s %s %s", 
                in_now ? "Logged in" : "Last login", 
                acct.fromhost, in_now ? "since" : "at", 
-               Ctime((time_t *)&acct.lastlogin));
+               Ctime(&acct.lastlogin));
   printchatline(buf);
   if (acct.realname[0] != '\0') {
     sprintf(buf, "*** Real name: %s", acct.realname);
@@ -266,8 +254,7 @@ chat_query_user (char *cbuf)
   return 0;
 }
 
-int 
-chat_show_page_request (void)
+int chat_show_page_request(void)
 {
   USEREC urec;
   char buf[80];
@@ -280,8 +267,7 @@ chat_show_page_request (void)
   return 0;
 }
 
-int 
-chat_process_incoming (int fd, char *chatid)
+int chat_process_incoming(int fd, char *chatid)
 {
   static char buf[CHATLINE_MAX*2+1];
   static int bufstart = 0;
@@ -316,16 +302,14 @@ chat_process_incoming (int fd, char *chatid)
   return 0;  
 }
 
-int 
-chat_exit (char *buf)
+int chat_exit(char *buf)
 {
   /* Send the line, then return 1 so we exit. */
   bbs_chat_send(buf);
   return 1;
 }
 
-int 
-chat_cmd_match (char *buf, char *str)
+int chat_cmd_match(char *buf, char *str)
 {
   if (*buf != '/') return 0;
   for (buf++; *str && *buf && !isspace(*buf); buf++, str++) {
@@ -334,8 +318,7 @@ chat_cmd_match (char *buf, char *str)
   return 1;
 }
 
-int 
-chat_process_local (char *cbuf, char *chatid)
+int chat_process_local(char *cbuf, char *chatid)
 {
   /* 
      See if the typed line should be handled locally. If not, return -1.
@@ -364,8 +347,7 @@ chat_process_local (char *cbuf, char *chatid)
   return -1;
 }
 
-int 
-Chat (void)
+int Chat(void)
 {
   CHATID chatid;
   char cbuf[CHATLINE_TEXT_MAX+1];

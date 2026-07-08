@@ -22,7 +22,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -36,17 +35,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #else
 # if USES_UTMPX
 #  include <utmpx.h>
-#  ifdef __linux__
-#   include <paths.h>
-#  endif
 #  undef UTMP_FILE
-#  if defined(UTMPX_FILE)
-#   define UTMP_FILE UTMPX_FILE
-#  elif defined(_PATH_UTMPX)
-#   define UTMP_FILE _PATH_UTMPX
-#  else
-#   define UTMP_FILE "/var/run/utmpx"
-#  endif
+#  define UTMP_FILE UTMPX_FILE
 # else
 #  include <utmp.h>
 #  ifndef UTMP_FILE
@@ -68,18 +58,18 @@ int user_number = -1;
 extern SERVERDATA server;
 extern char mode_pageable[];
 
-SHORT 
-my_real_mode (void)
+SHORT
+my_real_mode()
 {
   return (user_params.u.mode & ~MODE_FLG_NOPAGE);
 }
 
-int 
-set_real_mode (SHORT mode)
+int
+set_real_mode(SHORT mode)
 {
   utable_get_record(user_number, &user_params);
   switch (mode) {
-  case 0: 
+  case 0:
     /* Magic value: clear the non-pageable flag */
     user_params.u.mode &= ~MODE_FLG_NOPAGE;
     break;
@@ -93,46 +83,47 @@ set_real_mode (SHORT mode)
   }
   utable_set_record(user_number, &user_params);
   return S_OK;
-}  
+}
 
-int 
-my_utable_slot (void)
+int
+my_utable_slot()
 {
   return user_number;
 }
 
-int 
-_has_perms (LONG mask)
+int
+_has_perms(LONG mask)
 {
   return(user_params.perms & mask);
 }
 
-int 
-is_me (char *userid)
+int
+is_me(char *userid)
 {
   return(!strcasecmp(userid, user_params.u.userid));
 }
 
 char *
-my_userid (void)
+my_userid()
 {
   return user_params.u.userid;
 }
 
 char *
-my_username (void)
+my_username()
 {
   return user_params.u.username;
 }
 
 char *
-my_host (void)
+my_host()
 {
+  /* Note this will be "localhost" if server.hidehostname is true */
   return user_params.u.fromhost;
 }
 
-int 
-my_flag (SHORT flag)
+int
+my_flag(SHORT flag)
 {
   return (user_params.u.flags & flag);
 }
@@ -151,7 +142,10 @@ get_remote_host(char *host)
 #if USES_UTMPX
   struct utmpx ut;
 #else
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   struct utmp ut;
+#pragma clang diagnostic pop
 #endif /* USES_UTMPX */
   int uthostlen = sizeof ut.ut_host;
   char *tt = ttyname(0);
@@ -191,12 +185,12 @@ get_client_host(char *host)
     strcpy(host, "unknown");
     return S_SYSERR;
   }
-  hent = gethostbyaddr((char *)&sin.sin_addr.s_addr, 
+  hent = gethostbyaddr((char *)&sin.sin_addr.s_addr,
                        sizeof(sin.sin_addr.s_addr), AF_INET);
   if (hent == NULL) {
     char *netaddr = inet_ntoa(sin.sin_addr);
     if (netaddr == NULL) strcpy(host, "unknown");
-    else strncpy(host, netaddr, HOSTLEN);            
+    else strncpy(host, netaddr, HOSTLEN);
   }
   else {
     strncpy(host, hent->h_name, HOSTLEN);
@@ -205,9 +199,8 @@ get_client_host(char *host)
 }
 
 int
-_logent_to_data(char *rec, void *ldataarg)
+_logent_to_data(char *rec, LOGONDATA *ldata)
 {
-  LOGONDATA *ldata = (LOGONDATA *)ldataarg;
   rec =_extract_quoted(rec, ldata->userid, sizeof(ldata->userid));
   ldata->logonlimit = atoi(rec);
   return S_OK;
@@ -215,9 +208,8 @@ _logent_to_data(char *rec, void *ldataarg)
 
 /*ARGSUSED*/
 int
-_count_logons(int indx, USERDATA *udata, void *ctrarg)
+_count_logons(int indx, USERDATA *udata, int *ctr)
 {
-  int *ctr = (int *)ctrarg;
   (*ctr)++;
   return S_OK;
 }
@@ -230,16 +222,15 @@ logon_limit_exceeded(char *userid)
   rc = _record_find(LOGONFILE, _match_first, userid, _logent_to_data, &ldata);
   if (rc != S_OK) ldata.logonlimit = server.maxlogons;
   if (ldata.logonlimit == 0) return 0;    /* 0 means unlimited */
-  utable_enumerate(0, userid, _count_logons, &online);  
+  utable_enumerate(0, userid, _count_logons, &online);
   if (online >= ldata.logonlimit) return 1;
   return 0;
 }
 
 /*ARGSUSED*/
 int
-_userid_to_pid(int indx, USERDATA *udata, void *pidarg)
+_userid_to_pid(int indx, USERDATA *udata, LONG *pid)
 {
-  LONG *pid = (LONG *)pidarg;
   *pid = udata->u.pid;
   return ENUM_QUIT;
 }
@@ -260,27 +251,30 @@ local_bbs_login(char *userid, char *passwd, SHORT kick, LOGININFO *loginfo)
 {
   ACCOUNT acct;
   OPENINFO oinfo;
+  HOST fromhost;
   int usernum;
-  
+
   if (user_number != -1) {
     /* Already logged in! */
     return S_LOGGEDIN;
   }
 
+  memset(fromhost, 0, sizeof(HOST));
   if (user_params.u.fromhost[0] == '\0') {
     if (bbslib_user == BBSLIB_BBSD)
-      get_client_host(user_params.u.fromhost);
+      get_client_host(fromhost);
     else
-      get_remote_host(user_params.u.fromhost);
+      get_remote_host(fromhost);
   }
+  else strcpy(fromhost, user_params.u.fromhost);
 
   if (_lookup_account(userid, &acct) != S_OK) {
-    bbslog(1, "BADUSERID %s from %s\n", userid, user_params.u.fromhost);
+    bbslog(1, "BADUSERID %s from %s\n", userid, fromhost);
     return S_LOGINFAIL;
   }
 
   if (!is_passwd_good(acct.passwd, passwd)) {
-    bbslog(1, "BADPASSWORD %s from %s\n", userid, user_params.u.fromhost);
+    bbslog(1, "BADPASSWORD %s from %s\n", userid, fromhost);
     return S_LOGINFAIL;
   }
 
@@ -309,6 +303,13 @@ local_bbs_login(char *userid, char *passwd, SHORT kick, LOGININFO *loginfo)
 
   strcpy(user_params.u.userid, acct.userid);
   strcpy(user_params.u.username, acct.username);
+  if (server.hidehostname) {
+    /* If hiding hostnames, we can't put it here or chatd sees it */
+    strcpy(user_params.u.fromhost, "localhost");
+  }
+  else {
+    strcpy(user_params.u.fromhost, fromhost);
+  }
   user_params.u.pid = getpid();
   user_params.u.flags = acct.flags;
   user_params.u.mode = M_UNDEFINED;
@@ -322,14 +323,14 @@ local_bbs_login(char *userid, char *passwd, SHORT kick, LOGININFO *loginfo)
 
   utable_set_record(user_number, &user_params);
 
-  set_lastlog(user_params.u.userid, user_params.u.fromhost);
+  set_lastlog(user_params.u.userid, fromhost);
 
-  bbslog(1, "LOGIN %s %s\n", user_params.u.userid, user_params.u.fromhost);
+  bbslog(1, "LOGIN %s %s\n", user_params.u.userid, fromhost);
   return S_OK;
 }
 
 int
-local_logout(void)
+local_logout()
 {
   if (user_number != -1) {
     utable_get_record(user_number, &user_params);
@@ -347,7 +348,7 @@ local_logout(void)
     bbslog(1, "LOGOUT %s\n", user_params.u.userid);
   }
   return S_OK;
-}  
+}
 
 int
 local_bbs_newlogin(ACCOUNT *acct, LOGININFO *loginfo)
@@ -364,10 +365,10 @@ local_bbs_newlogin(ACCOUNT *acct, LOGININFO *loginfo)
 }
 
 int
-local_bbs_check_mail(void)
+local_bbs_check_mail()
 {
   utable_get_record(user_number, &user_params);
-  return (user_params.newmailmsgs > 0 ? 1 : 0);  
+  return (user_params.newmailmsgs > 0 ? 1 : 0);
 }
 
 int
@@ -459,7 +460,7 @@ local_bbs_owninfo(ACCOUNT *acct)
 }
 
 int
-local_bbs_toggle_cloak(void)
+local_bbs_toggle_cloak()
 {
   ACCOUNT acct;
   int mode = my_real_mode();
@@ -543,9 +544,8 @@ local_bbs_set_signature(char *fname)
 }
 
 int
-_enum_users(int indx, USERDATA *info, void *enarg)
+_enum_users(int indx, USERDATA *info, struct enumstruct *en)
 {
-  struct enumstruct *en = (struct enumstruct *)enarg;
   int pageok = 1;
   if ((info->u.flags & FLG_CLOAK) && !_has_access(C_SEECLOAK))
     return S_OK;
@@ -556,30 +556,28 @@ _enum_users(int indx, USERDATA *info, void *enarg)
     info->u.mode &= ~MODE_FLG_NOPAGE;
     pageok = 0;
   }
-  
+
   if (pageok) pageok = has_page_permission(info);
   info->u.flags &= ~(FLG_EXEMPT);
   info->u.flags &= ~(FLG_NOPAGE | FLG_NOOVERRIDE);
   if (!pageok) info->u.flags |= FLG_NOPAGE;
-  if (en->fn(indx, &info->u, en->arg) == ENUM_QUIT) return ENUM_QUIT;
+  if (((int (*)(int, USEREC *, void *))en->fn)(indx, &info->u, en->arg) == ENUM_QUIT) return ENUM_QUIT;
   return S_OK;
 }
 
 int
-local_bbs_enum_users(SHORT chunk, SHORT startrec, char *userid, int (*enumfn)(int, USEREC *, void *), void *arg)
+local_bbs_enum_users(SHORT chunk, SHORT startrec, char *userid, int (*enumfn)(), void *arg)
 {
   struct enumstruct en;
-  en.fn = (int (*)(int, void *, void *))enumfn;
+  en.fn = enumfn;
   en.arg = arg;
   utable_enumerate(startrec, userid, _enum_users, &en);
   return S_OK;
 }
 
-/*ARGSUSED*/
 int
-_enum_user_names(int indx, USERDATA *info, void *lcarg)
+_enum_user_names(int indx, USERDATA *info, struct listcomplete *lc)
 {
-  struct listcomplete *lc = (struct listcomplete *)lcarg;
   if ((info->u.flags & FLG_CLOAK) && !_has_access(C_SEECLOAK))
     return S_OK;
 
@@ -614,19 +612,16 @@ local_bbs_kick_user(LONG pid)
   else return S_OK;
 }
 
-/*ARGSUSED*/
 int
-_mail_adjust(int indx, USERDATA *info, void *adjvalarg)
+_mail_adjust(int indx, USERDATA *info, int *adjval)
 {
-  int *adjval = (int *)adjvalarg;
   info->newmailmsgs += *adjval;
   utable_set_record(indx, info);
   return S_OK;
 }
 
-int
+void
 notify_new_mail(char *userid, int adjust)
 {
   utable_enumerate(0, userid, _mail_adjust, &adjust);
-  return S_OK;
 }

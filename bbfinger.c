@@ -1,5 +1,4 @@
 #include "server.h"
-#include <unistd.h>
 
 extern char *optarg;
 extern int optind;
@@ -9,29 +8,24 @@ extern SERVERDATA server;
 
 extern char *ModeToString __P((SHORT));
 
-int 
-usage (char *prog)
+void usage(char *prog)
 {
   fprintf(stderr,
 	  "Usage: %s [-d bbs-dir]\n", prog);
-  return 0;
 }
 
 /*ARGSUSED*/
-int
-one_line_display (int indx, USEREC *urec, void *arg)
+int one_line_display(int indx, USEREC *urec, int *count)
 {
-  int *count = (int *)arg;
-  printf("%-12s    %-25s %-25s   %s\n", urec->userid,
-	 urec->username, urec->fromhost,
+  printf("%-12s    %-25s %-25s   %s\n", urec->userid, 
+	 urec->username, urec->fromhost, 
          ModeToString(urec->mode));
 
   (*count)++;
   return S_OK;
 }
 
-int 
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     char *bbshome = NULL;
     int c, count = 0;
