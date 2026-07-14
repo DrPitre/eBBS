@@ -130,7 +130,7 @@ sig_handler(int sig)
 }
 
 void
-hit_alarm_clock()
+hit_alarm_clock(int sig)
 {
   if (!input_active) {
     disconnect(EXIT_TIMEDOUT);
